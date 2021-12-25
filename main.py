@@ -6,21 +6,21 @@ class Entity:  # сущность - думаю, можно или объедин
     def __init__(self, pos, board):
         self.board = board
         self.pos = pos
-        self.speed = 0.5    # от 0.1 до 1
+        self.speed = 0.5  # от 0.1 до 1
         self.dir1 = 0  # освновное направление
         self.dir2 = 0  # если игрок изменил направление тогда, когда в том направлении была стена, записывается сюда
-        self.directions = {0: (1, 0),    # вправо
-                           1: (-1, 0),   # влево
-                           2: (0, 1),    # вниз
-                           3: (0, -1)}   # вверх
-        
+        self.directions = {0: (1, 0),  # вправо
+                           1: (-1, 0),  # влево
+                           2: (0, 1),  # вниз
+                           3: (0, -1)}  # вверх
+
     def change_dir(self, dr):
         self.dir2 = dr
-    
+
     def change_coords(self):
         for direction in [self.dir2, self.dir1]:  # сначала обрабатывает dir2, если не сработало - dir1
             x, y = self.directions[direction]
-            x1 = round(self.pos[0] + x * self.speed, 1)   # изменяет координаты в соответствии с направлением
+            x1 = round(self.pos[0] + x * self.speed, 1)  # изменяет координаты в соответствии с направлением
             y1 = round(self.pos[1] + y * self.speed, 1)
             try:
                 # assertы обрабатывают, можно ли пойти в этом направлении
@@ -50,21 +50,18 @@ class Ghost:
         self.trajectory = trajectory
         self.board = board
         self.pos = pos
-        self.point = 0   # к которой точке траектории направляется
+        self.point = 0  # к которой точке траектории направляется
         self.speed = 0.1
-    
+
     def move(self):
-        x = 1
-        y = 1
         if self.trajectory[self.point] == self.pos:
-            if self.point == len(self.trajectory) - 1:
-                self.point = 0
-            else:
-                self.point += 1
-        if self.trajectory[self.point][0] < self.pos[0]:
-            x = -1
-        if self.trajectory[self.point][1] < self.pos[1]:
-            y = -1
+            self.point = (self.point + 1) % len(self.trajectory)
+        x = self.trajectory[self.point][0] - self.pos[0]
+        y = self.trajectory[self.point][1] - self.pos[1]
+        if x != 0:
+            x = abs(x) / x
+        if y != 0:
+            y = abs(y) / y
         x1 = round(self.pos[0] + x * self.speed, 1)
         y1 = round(self.pos[1] + y * self.speed, 1)
         self.pos = x1, y1
@@ -76,11 +73,11 @@ class AngriestGhost(Entity, Ghost):
         self.speed = 0.1
 
     def change_dir(self, goal):
-        if goal[0] - self.pos[0] > 0:   # если цель (игрок) правее привидения
+        if goal[0] - self.pos[0] > 0:  # если цель (игрок) правее привидения
             dir_x = 0
         else:
             dir_x = 1
-        if goal[1] - self.pos[1] > 0:   # если ниже привидения
+        if goal[1] - self.pos[1] > 0:  # если ниже привидения
             dir_y = 2
         else:
             dir_y = 3
@@ -91,8 +88,7 @@ class AngriestGhost(Entity, Ghost):
             self.dir2 = dir_y
             self.dir1 = dir_x
         else:
-            pass    # Кушац попался
-
+            pass  # Кушац попался
 
 
 class Board:
@@ -100,9 +96,9 @@ class Board:
     def __init__(self, width, height):
         self.width = width
         self.height = height
-#         self.board = [[0] * width for _ in range(height)]      # для тестирования
-#         self.board[7] = [1] * 13 + [0] 
-        self.board = [[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],     # собственно поле
+        #         self.board = [[0] * width for _ in range(height)]      # для тестирования
+        #         self.board[7] = [1] * 13 + [0]
+        self.board = [[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # собственно поле
                       [0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0],
                       [0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0],
                       [0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -119,7 +115,7 @@ class Board:
         self.left = 50
         self.top = 50
         self.cell_size = 50
-        self.kush = Entity([1, 12], self)   # игрок
+        self.kush = Entity([1, 12], self)  # игрок
         self.angriest_ghost = AngriestGhost([12, 3], self)  # привидение которое движется к игроку
         self.ghost0 = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
                                            (5, 11), (5, 13), (3, 13), (3, 11),
@@ -170,7 +166,7 @@ class Board:
         x = pos[0] * self.cell_size + self.left
         y = pos[1] * self.cell_size + self.top
         return [x, y]
-        
+
 
 if True:
     pygame.init()
