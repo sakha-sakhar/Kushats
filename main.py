@@ -17,33 +17,31 @@ class Entity:  # сущность - думаю, можно или объедин
     def change_dir(self, dr):
         self.dir2 = dr
 
+    def can_move(self, direction):
+        x, y = self.directions[direction]
+        x1 = round(self.pos[0] + x * self.speed, 1)  # изменяет координаты в соответствии с направлением
+        y1 = round(self.pos[1] + y * self.speed, 1)
+        try:
+            # assertы обрабатывают, можно ли пойти в этом направлении
+            assert 0 <= x1 <= 13 and 0 <= y1 <= 13
+            assert board.board[floor(y1)][floor(x1)] != 1
+            assert board.board[ceil(y1)][ceil(x1)] != 1
+            assert board.board[floor(y1)][ceil(x1)] != 1
+            assert board.board[ceil(y1)][floor(x1)] != 1
+            return (x1, y1)
+        except IndexError:
+            # если в какой-то момент Кушац у стены, то выползает IndexError
+            return (x1, y1)
+        except:
+            return False
+
     def change_coords(self):
         for direction in [self.dir2, self.dir1]:  # сначала обрабатывает dir2, если не сработало - dir1
-            x, y = self.directions[direction]
-            x1 = round(self.pos[0] + x * self.speed, 1)  # изменяет координаты в соответствии с направлением
-            y1 = round(self.pos[1] + y * self.speed, 1)
-            try:
-                # assertы обрабатывают, можно ли пойти в этом направлении
-                assert 0 <= x1 <= 13 and 0 <= y1 <= 13
-                assert board.board[floor(y1)][floor(x1)] != 1
-                assert board.board[ceil(y1)][ceil(x1)] != 1
-                assert board.board[floor(y1)][ceil(x1)] != 1
-                assert board.board[ceil(y1)][floor(x1)] != 1
-                self.pos[0] = x1
-                self.pos[1] = y1
+            a = self.can_move(direction)
+            if a:
+                self.pos = a
                 self.dir1 = direction
-                # если можно, то координаты меняются, и, если это был dir2, то он становится основным направлением
-                # и dir1 не обрабатывается
-                return True
-            except IndexError:
-                # если в какой-то момент Кушац у стены, то выползает IndexError
-                self.pos[0] = x1
-                self.pos[1] = y1
-                self.dir1 = direction
-                return True
-            except:
-                pass
-        return False
+                return
 
 
 class Ghost:
