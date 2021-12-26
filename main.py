@@ -74,22 +74,18 @@ class Chaser(Entity, Ghost):
         self.speed = 0.1
 
     def change_dir(self, goal):
-        if goal[0] - self.pos[0] >= 0:  # если цель (игрок) правее привидения
-            dir_x = 0
-        else:
-            dir_x = 1
-        if goal[1] - self.pos[1] >= 0:  # если ниже привидения
-            dir_y = 2
-        else:
-            dir_y = 3
-        if abs(goal[0] - self.pos[0]) > abs(goal[1] - self.pos[1]):
-            self.dir2 = dir_x
-            self.dir1 = dir_y
-        elif abs(goal[0] - self.pos[0]) < abs(goal[1] - self.pos[1]):
-            self.dir2 = dir_y
-            self.dir1 = dir_x
-        else:
-            pass # Кушац попался
+        deltax = goal[0] - self.pos[0]
+        deltay = goal[1] - self.pos[1]
+        if abs(deltax) > abs(deltay):
+            if deltax > 0:
+                self.dir2 = 1
+            else:
+                self.dir2 = 0
+        if abs(deltax) < abs(deltay) or self.can_go(self.dir2):
+            if deltay > 0:
+                self.dir2 = 3
+            else:
+                self.dir2 = 2
 
     def change_coords(self):
         if not super().change_coords():
