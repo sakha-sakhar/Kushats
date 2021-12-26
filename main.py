@@ -7,18 +7,19 @@ class Entity:  # сущность - думаю, можно или объедин
         self.board = board
         self.pos = pos
         self.speed = 0.5  # от 0.1 до 1
-        self.dir1 = 0  # освновное направление
-        self.dir2 = 0  # если игрок изменил направление тогда, когда в том направлении была стена, записывается сюда
-        self.directions = {0: (1, 0),  # вправо
+        self.dir1 = (1, 0)   # освновное направление
+        self.dir2 = (1, 0)  # если игрок изменил направление тогда, когда в том направлении была стена, записывается сюда
+        self.directions = {0: (1, 0),   # вправо
                            1: (-1, 0),  # влево
-                           2: (0, 1),  # вниз
-                           3: (0, -1)}  # вверх
+                           2: (0, 1),   # вниз
+                           3: (0, -1),  # вверх
+                           4: (0, 0)}   # стоп
 
     def change_dir(self, dr):
-        self.dir2 = dr
+        self.dir2 = self.directions[dr]
 
     def can_move(self, direction):
-        x, y = self.directions[direction]
+        x, y = direction
         x1 = round(self.pos[0] + x * self.speed, 1)  # изменяет координаты в соответствии с направлением
         y1 = round(self.pos[1] + y * self.speed, 1)
         try:
@@ -41,7 +42,8 @@ class Entity:  # сущность - думаю, можно или объедин
             if a:
                 self.pos = a
                 self.dir1 = direction
-                return
+                return True
+        return False
 
 
 class Ghost:
@@ -74,24 +76,19 @@ class Chaser(Entity, Ghost):
     def change_dir(self, goal):
         deltax = goal[0] - self.pos[0]
         deltay = goal[1] - self.pos[1]
-        if deltax > 0:  # если цель (игрок) правее привидения
-            dir_x = 0
-        else:
-            dir_x = 1
-        if deltay > 0:  # если ниже привидения
-            dir_y = 2
-        else:
-            dir_y = 3
-        if abs(deltax) > abs(deltay):
+        dir_x = (abs(deltax) / deltax if deltax != 0 else 0, 0)
+        dir_y = (0, abs(deltay) / deltay if deltay != 0 else 0)
+        if self.can_move(dir_x) and deltax != 0 or deltay == 0:
             self.dir2 = dir_x
-            self.dir1 = dir_y
-        elif abs(deltax) < abs(deltay):
+        else:
             self.dir2 = dir_y
-            self.dir1 = dir_x
+        if self.dir1 == (0, 0):
+            self.dir1 = self.dir2
 
     def change_coords(self):
         if not super().change_coords():
             self.change_dir(self.board.kush.pos)
+            super().change_coords()
 
 
 class Board:
