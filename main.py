@@ -74,16 +74,20 @@ class Chaser(Entity, Ghost):
     def change_dir(self, goal):
         deltax = goal[0] - self.pos[0]
         deltay = goal[1] - self.pos[1]
+        if deltax > 0:  # если цель (игрок) правее привидения
+            dir_x = 0
+        else:
+            dir_x = 1
+        if deltay > 0:  # если ниже привидения
+            dir_y = 2
+        else:
+            dir_y = 3
         if abs(deltax) > abs(deltay):
-            if deltax > 0:
-                self.dir2 = 1
-            else:
-                self.dir2 = 0
-        if abs(deltax) < abs(deltay) or self.can_go(self.dir2):
-            if deltay > 0:
-                self.dir2 = 3
-            else:
-                self.dir2 = 2
+            self.dir2 = dir_x
+            self.dir1 = dir_y
+        elif abs(deltax) < abs(deltay):
+            self.dir2 = dir_y
+            self.dir1 = dir_x
 
     def change_coords(self):
         if not super().change_coords():
