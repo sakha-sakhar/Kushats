@@ -34,15 +34,16 @@ class Entity:  # сущность - думаю, можно или объедин
                 self.dir1 = direction
                 # если можно, то координаты меняются, и, если это был dir2, то он становится основным направлением
                 # и dir1 не обрабатывается
-                return
+                return True
             except IndexError:
                 # если в какой-то момент Кушац у стены, то выползает IndexError
                 self.pos[0] = x1
                 self.pos[1] = y1
                 self.dir1 = direction
-                return
+                return True
             except:
                 pass
+        return False
 
 
 class Ghost:
@@ -67,17 +68,17 @@ class Ghost:
         self.pos = x1, y1
 
 
-class AngriestGhost(Entity, Ghost):
+class Chaser(Entity, Ghost):
     def __init__(self, board, pos):
         super().__init__(board, pos)
         self.speed = 0.1
 
     def change_dir(self, goal):
-        if goal[0] - self.pos[0] > 0:  # если цель (игрок) правее привидения
+        if goal[0] - self.pos[0] >= 0:  # если цель (игрок) правее привидения
             dir_x = 0
         else:
             dir_x = 1
-        if goal[1] - self.pos[1] > 0:  # если ниже привидения
+        if goal[1] - self.pos[1] >= 0:  # если ниже привидения
             dir_y = 2
         else:
             dir_y = 3
@@ -88,7 +89,12 @@ class AngriestGhost(Entity, Ghost):
             self.dir2 = dir_y
             self.dir1 = dir_x
         else:
-            pass  # Кушац попался
+            pass # Кушац попался
+
+    def change_coords(self):
+        if not super().change_coords():
+            self.change_dir(self.board.kush.pos)
+
 
 
 class Board:
@@ -116,7 +122,7 @@ class Board:
         self.top = 50
         self.cell_size = 50
         self.kush = Entity([1, 12], self)  # игрок
-        self.angriest_ghost = AngriestGhost([12, 3], self)  # привидение которое движется к игроку
+        self.angriest_ghost = Chaser([12, 3], self)  # привидение которое движется к игроку
         self.ghost0 = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
                                            (5, 11), (5, 13), (3, 13), (3, 11),
                                            (6, 11), (6, 12), (7, 12), (7, 13),
@@ -188,7 +194,6 @@ if True:
         clock.tick(50)
         screen.fill((0, 0, 0))
         board.kush.change_coords()
-        board.angriest_ghost.change_dir(board.kush.pos)
         board.angriest_ghost.change_coords()
         board.ghost0.move()
         board.ghost1.move()
