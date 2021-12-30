@@ -6,8 +6,8 @@ from math import ceil, floor
 directions = {0: ((1, 0), 'right'),  # вправо
               1: ((-1, 0), 'left'),  # влево
               2: ((0, 1), 'down'),  # вниз
-              3: ((0, -1), 'up')}  # вверх
-
+              3: ((0, -1), 'up'),  # вверх
+              -1: ((0, 0), 'stop')}   # стоп
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('images', name)
@@ -188,7 +188,8 @@ class Board:
                                                      rct[1] + self.cell_size // 2 - 5, 10, 10))
         screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
         screen.blit(self.cloudy.get_image(), (self.get_coords(self.cloudy.pos)))
-        for ghost in [self.ghost1, self.chaser]:
+        screen.blit(self.chaser.get_image(), (self.get_coords(self.chaser.pos)))
+        for ghost in [self.ghost1]:
             x, y = self.get_coords(ghost.pos)
             x += self.cell_size // 2
             y += self.cell_size // 2
