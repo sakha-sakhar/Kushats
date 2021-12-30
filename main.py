@@ -167,12 +167,12 @@ class Board:
                                            (10, 12), (9, 12), (9, 10), (6, 10),
                                            (6, 11), (4, 11), (4, 9), (3, 9),
                                            (3, 2), (1, 2), (1, 0)], (205, 92, 92), name='cloudy')
-        self.ghost1 = Ghost((10, 2), self, [(10, 0), (12, 0), (12, 1), (13, 1),
+        self.mandarin = Ghost((10, 2), self, [(10, 0), (12, 0), (12, 1), (13, 1),
                                             (13, 3), (6, 3), (9, 3), (9, 0),
                                             (7, 0), (7, 1), (5, 1), (5, 2),
                                             (0, 2), (0, 1), (1, 1), (1, 0), (3, 0),
                                             (3, 3), (4, 3), (4, 2), (5, 2),
-                                            (5, 0), (9, 0), (9, 2), (10, 2)], (255, 140, 0))
+                                            (5, 0), (9, 0), (9, 2), (10, 2)], (255, 140, 0), name='mandarin')
 
     def render(self, screen):
         x, y = self.kush.pos
@@ -189,11 +189,7 @@ class Board:
         screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
         screen.blit(self.cloudy.get_image(), (self.get_coords(self.cloudy.pos)))
         screen.blit(self.chaser.get_image(), (self.get_coords(self.chaser.pos)))
-        for ghost in [self.ghost1]:
-            x, y = self.get_coords(ghost.pos)
-            x += self.cell_size // 2
-            y += self.cell_size // 2
-            pygame.draw.circle(screen, ghost.color, (x, y), self.cell_size // 2)
+        screen.blit(self.mandarin.get_image(), (self.get_coords(self.mandarin.pos)))
 
     def get_coords(self, pos):  # преобразует позицию клетки в кординаты её левого верхнего угла
         x = pos[0] * self.cell_size + self.left
@@ -224,7 +220,7 @@ if True:
         board.kush.change_coords()
         board.chaser.change_coords()
         board.cloudy.move()
-        board.ghost1.move()
+        board.mandarin.move()
         board.render(screen)
         pygame.display.flip()
     pygame.quit()
