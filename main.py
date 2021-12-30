@@ -47,7 +47,8 @@ class Entity:  # сущность - думаю, можно или объедин
 
 
 class Ghost:
-    def __init__(self, pos, board, trajectory):
+    def __init__(self, pos, board, trajectory, color):
+        self.color = color
         self.trajectory = trajectory
         self.board = board
         self.pos = pos
@@ -71,6 +72,7 @@ class Ghost:
 class Chaser(Entity, Ghost):
     def __init__(self, board, pos):
         super().__init__(board, pos)
+        self.color = (225, 0, 255)
         self.speed = 0.1
 
     def change_dir(self, dir_x, dir_y):
@@ -123,13 +125,13 @@ class Board:
                                            (13, 12), (12, 12), (12, 13), (10, 13),
                                            (10, 12), (9, 12), (9, 10), (6, 10),
                                            (6, 11), (4, 11), (4, 9), (3, 9),
-                                           (3, 2), (1, 2), (1, 0)])
+                                           (3, 2), (1, 2), (1, 0)], (205, 92, 92))
         self.ghost1 = Ghost((10, 2), self, [(10, 0), (12, 0), (12, 1), (13, 1),
                                             (13, 3), (6, 3), (9, 3), (9, 0),
                                             (7, 0), (7, 1), (5, 1), (5, 2),
                                             (0, 2), (0, 1), (1, 1), (1, 0), (3, 0),
                                             (3, 3), (4, 3), (4, 2), (5, 2),
-                                            (5, 0), (9, 0), (9, 2), (10, 2)])
+                                            (5, 0), (9, 0), (9, 2), (10, 2)], (255, 140, 0))
 
     def render(self, screen):
         x, y = self.kush.pos
@@ -147,18 +149,11 @@ class Board:
                     screen.fill((255, 255, 0), rect=(rct[0] + self.cell_size // 2 - 5,
                                                      rct[1] + self.cell_size // 2 - 5, 10, 10))
         screen.fill((255, 255, 0), rect=(*self.get_coords(self.kush.pos), self.cell_size, self.cell_size))
-        x, y = self.get_coords(self.ghost0.pos)
-        x += self.cell_size // 2
-        y += self.cell_size // 2
-        pygame.draw.circle(screen, (205, 92, 92), (x, y), self.cell_size // 2)
-        x, y = self.get_coords(self.ghost1.pos)
-        x += self.cell_size // 2
-        y += self.cell_size // 2
-        pygame.draw.circle(screen, (255, 140, 0), (x, y), self.cell_size // 2)
-        x, y = self.get_coords(self.angriest_ghost.pos)
-        x += self.cell_size // 2
-        y += self.cell_size // 2
-        pygame.draw.circle(screen, (225, 0, 255), (x, y), self.cell_size // 2)
+        for ghost in [self.ghost0, self.ghost1, self.angriest_ghost]:
+            x, y = self.get_coords(ghost.pos)
+            x += self.cell_size // 2
+            y += self.cell_size // 2
+            pygame.draw.circle(screen, ghost.color, (x, y), self.cell_size // 2)
 
     def get_coords(self, pos):
         # преобразует позицию клетки в кординаты её левого верхнего угла
