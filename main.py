@@ -76,20 +76,18 @@ class Chaser(Entity, Ghost):
     def change_dir(self, dir_x, dir_y):
         if self.can_move(dir_x) and dir_x != (0, 0):
             self.dir2 = dir_x
-        else:
+        elif self.can_move(dir_y) and dir_y != (0, 0):
             self.dir2 = dir_y
-        if self.dir1 == (0, 0):
-            self.dir1 = self.dir2
+        else:
+            self.dir2 = (0, 0)
 
     def change_coords(self):
         deltax = self.board.kush.pos[0] - self.pos[0]
         deltay = self.board.kush.pos[1] - self.pos[1]
         dir_x = (abs(deltax) / deltax if deltax != 0 else 0, 0)
         dir_y = (0, abs(deltay) / deltay if deltay != 0 else 0)
-        if not super().change_coords() or (self.dir1 != (dir_x or dir_y)):
-            print(self.dir1, self.dir2, dir_x, dir_y)
-            self.change_dir(dir_x, dir_y)
-            super().change_coords()
+        self.change_dir(dir_x, dir_y)
+        super().change_coords()
 
 
 class Board:
