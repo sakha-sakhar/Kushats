@@ -3,6 +3,11 @@ import sys
 import os
 from math import ceil, floor
 
+directions = {0: ((1, 0), 'right'),  # вправо
+              1: ((-1, 0), 'left'),  # влево
+              2: ((0, 1), 'down'),  # вниз
+              3: ((0, -1), 'up')}  # вверх
+
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('images', name)
@@ -28,15 +33,10 @@ class Entity:  # сущность - думаю, можно или объедин
         self.name = name
         self.speed = 0.5  # от 0.1 до 1
         self.dir1 = (1, 0)  # освновное направление
-        self.dir2 = (
-        1, 0)  # если игрок изменил направление тогда, когда в том направлении была стена, записывается сюда
-        self.directions = {0: ((1, 0), 'right'),  # вправо
-                           1: ((-1, 0), 'left'),  # влево
-                           2: ((0, 1), 'down'),  # вниз
-                           3: ((0, -1), 'up')}  # вверх
+        self.dir2 = (1, 0)  # если игрок изменил направление тогда, когда в том направлении была стена, записывается сюда
 
     def change_dir(self, dr):
-        self.dir2 = self.directions[dr][0]
+        self.dir2 = directions[dr][0]
 
     def can_move(self, direction):
         x, y = direction
@@ -66,22 +66,24 @@ class Entity:  # сущность - думаю, можно или объедин
         return False
 
     def get_image(self):
-        for dr in self.directions:
-            if self.directions[dr][0] == self.dir1:
-                direction = self.directions[dr][1]
+        for dr in directions:
+            if directions[dr][0] == self.dir1:
+                direction = directions[dr][1]
                 break
         im = self.name + direction + str(pygame.time.get_ticks() // 200 % 2) + '.png'
         return load_image(im)
 
 
 class Ghost:
-    def __init__(self, pos, board, trajectory, color):
+    def __init__(self, pos, board, trajectory, color, name=None):
         self.color = color
+        self.name = name
         self.trajectory = trajectory
         self.board = board
         self.pos = pos
         self.point = 0  # к которой точке траектории направляется
         self.speed = 0.1
+        self.dir = (0, 1)
 
     def move(self):
         if self.trajectory[self.point] == self.pos:
@@ -92,9 +94,20 @@ class Ghost:
             x = abs(x) / x
         if y != 0:
             y = abs(y) / y
+        self.dir = (x, y)
         x1 = round(self.pos[0] + x * self.speed, 1)
         y1 = round(self.pos[1] + y * self.speed, 1)
         self.pos = x1, y1
+
+    def get_image(self):
+        if not self.name:
+            return load_image('noimage.png')
+        for dr in directions:
+            if directions[dr][0] == self.dir:
+                direction = directions[dr][1]
+                break
+        im = self.name + direction + str(pygame.time.get_ticks() // 200 % 2) + '.png'
+        return load_image(im)
 
 
 class Chaser(Entity, Ghost):
@@ -145,15 +158,15 @@ class Board:
         self.top = 50
         self.cell_size = 50
         self.kush = Entity([1, 12], self, 'kush')  # игрок
-        self.angriest_ghost = Chaser([12, 3], self)  # привидение которое движется к игроку
-        self.ghost0 = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
+        self.chaser = Chaser([12, 3], self)  # привидение которое движется к игроку
+        self.cloudy = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
                                            (5, 11), (5, 13), (3, 13), (3, 11),
                                            (6, 11), (6, 12), (7, 12), (7, 13),
                                            (9, 13), (9, 9), (13, 9),
                                            (13, 12), (12, 12), (12, 13), (10, 13),
                                            (10, 12), (9, 12), (9, 10), (6, 10),
                                            (6, 11), (4, 11), (4, 9), (3, 9),
-                                           (3, 2), (1, 2), (1, 0)], (205, 92, 92))
+                                           (3, 2), (1, 2), (1, 0)], (205, 92, 92), name='cloudy')
         self.ghost1 = Ghost((10, 2), self, [(10, 0), (12, 0), (12, 1), (13, 1),
                                             (13, 3), (6, 3), (9, 3), (9, 0),
                                             (7, 0), (7, 1), (5, 1), (5, 2),
@@ -174,7 +187,8 @@ class Board:
                     screen.fill((255, 255, 0), rect=(rct[0] + self.cell_size // 2 - 5,
                                                      rct[1] + self.cell_size // 2 - 5, 10, 10))
         screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
-        for ghost in [self.ghost0, self.ghost1, self.angriest_ghost]:
+        screen.blit(self.cloudy.get_image(), (self.get_coords(self.cloudy.pos)))
+        for ghost in [self.ghost1, self.chaser]:
             x, y = self.get_coords(ghost.pos)
             x += self.cell_size // 2
             y += self.cell_size // 2
@@ -207,8 +221,8 @@ if True:
         clock.tick(50)
         screen.blit(load_image('background' + str(pygame.time.get_ticks() // 500 % 2) + '.png'), (0, 0))
         board.kush.change_coords()
-        board.angriest_ghost.change_coords()
-        board.ghost0.move()
+        board.chaser.change_coords()
+        board.cloudy.move()
         board.ghost1.move()
         board.render(screen)
         pygame.display.flip()
