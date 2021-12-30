@@ -204,7 +204,7 @@ if True:
                     board.kush.change_dir(event.key - 1073741903)
                 else:
                     print(event.key)
-        clock.tick(120)
+        clock.tick(50)
         screen.blit(load_image('background' + str(pygame.time.get_ticks() // 500 % 2) + '.png'), (0, 0))
         board.kush.change_coords()
         board.angriest_ghost.change_coords()
