@@ -65,7 +65,7 @@ class Entity:  # сущность - думаю, можно или объедин
                 pass
 
     def get_image(self):
-        im = self.name + self.directions[self.dir1][1] + '.png'
+        im = self.name + self.directions[self.dir1][1] + str(pygame.time.get_ticks() // 200 % 2) + '.png'
         return load_image(im)
             
 
