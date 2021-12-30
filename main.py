@@ -25,14 +25,16 @@ class Entity:  # сущность - думаю, можно или объедин
     def __init__(self, pos, board, name):
         self.board = board
         self.pos = pos
+        self.name = name
         self.speed = 0.5  # от 0.1 до 1
         self.dir1 = (1, 0)  # освновное направление
-        self.dir2 = (1, 0)  # если игрок изменил направление тогда, когда в том направлении была стена, записывается сюда
-        self.directions = {0: ((1, 0), 'right'),    # вправо
-                           1: ((-1, 0), 'left'),   # влево
-                           2: ((0, 1), 'down'),    # вниз
-                           3: ((0, -1), 'up')}   # вверх
-        
+        self.dir2 = (
+        1, 0)  # если игрок изменил направление тогда, когда в том направлении была стена, записывается сюда
+        self.directions = {0: ((1, 0), 'right'),  # вправо
+                           1: ((-1, 0), 'left'),  # влево
+                           2: ((0, 1), 'down'),  # вниз
+                           3: ((0, -1), 'up')}  # вверх
+
     def change_dir(self, dr):
         self.dir2 = self.directions[dr][0]
 
@@ -54,7 +56,6 @@ class Entity:  # сущность - думаю, можно или объедин
         except:
             return False
 
-
     def change_coords(self):
         for direction in [self.dir2, self.dir1]:  # сначала обрабатывает dir2, если не сработало - dir1
             a = self.can_move(direction)
@@ -63,7 +64,14 @@ class Entity:  # сущность - думаю, можно или объедин
                 self.dir1 = direction
                 return True
         return False
-            
+
+    def get_image(self):
+        for dr in self.directions:
+            if self.directions[dr][0] == self.dir1:
+                direction = self.directions[dr][1]
+                break
+        im = self.name + direction + str(pygame.time.get_ticks() // 200 % 2) + '.png'
+        return load_image(im)
 
 
 class Ghost:
@@ -91,7 +99,7 @@ class Ghost:
 
 class Chaser(Entity, Ghost):
     def __init__(self, board, pos):
-        super().__init__(board, pos)
+        super().__init__(board, pos, 'chaser')
         self.color = (225, 0, 255)
         self.speed = 0.1
 
@@ -136,7 +144,7 @@ class Board:
         self.left = 50
         self.top = 50
         self.cell_size = 50
-        self.kush = Entity([1, 12], self, 'kush')   # игрок
+        self.kush = Entity([1, 12], self, 'kush')  # игрок
         self.angriest_ghost = Chaser([12, 3], self)  # привидение которое движется к игроку
         self.ghost0 = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
                                            (5, 11), (5, 13), (3, 13), (3, 11),
@@ -162,10 +170,7 @@ class Board:
             for j in range(self.height):
                 cell = self.board[j][i]
                 rct = (*self.get_coords([i, j]), self.cell_size, self.cell_size)
-                pygame.draw.rect(screen, (255, 255, 255), rect=rct, width=1)
-                if cell == 1:  # стены
-                    screen.fill((255, 0, 0), rect=rct)
-                elif cell == 0:  # точки
+                if cell == 0:  # точки
                     screen.fill((255, 255, 0), rect=(rct[0] + self.cell_size // 2 - 5,
                                                      rct[1] + self.cell_size // 2 - 5, 10, 10))
         screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
@@ -174,8 +179,8 @@ class Board:
             x += self.cell_size // 2
             y += self.cell_size // 2
             pygame.draw.circle(screen, ghost.color, (x, y), self.cell_size // 2)
-            
-    def get_coords(self, pos):   # преобразует позицию клетки в кординаты её левого верхнего угла
+
+    def get_coords(self, pos):  # преобразует позицию клетки в кординаты её левого верхнего угла
         x = pos[0] * self.cell_size + self.left
         y = pos[1] * self.cell_size + self.top
         return [x, y]
@@ -186,7 +191,7 @@ if True:
     pygame.display.set_caption("Kushats")
     size = width, height = 800, 800
     screen = pygame.display.set_mode(size)
-    screen.blit(load_image('background.png'), (0, 0))
+    screen.blit(load_image('background0.png'), (0, 0))
     board = Board(14, 14)
     clock = pygame.time.Clock()
     running = True
@@ -199,8 +204,8 @@ if True:
                     board.kush.change_dir(event.key - 1073741903)
                 else:
                     print(event.key)
-        clock.tick(50)
-        screen.blit(load_image('background.png'), (0, 0))
+        clock.tick(120)
+        screen.blit(load_image('background' + str(pygame.time.get_ticks() // 500 % 2) + '.png'), (0, 0))
         board.kush.change_coords()
         board.angriest_ghost.change_coords()
         board.ghost0.move()
