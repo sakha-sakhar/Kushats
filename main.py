@@ -213,7 +213,7 @@ class Board:
 
     def check_collision(self):
         for s in self.sweets:
-            if self.kush.pos == s.pos:
+            if self.kush.pos == s.pos and pygame.time.get_ticks() - self.kush.timer >= 5000:
                 s.eaten = True
 
     def render(self, screen):
