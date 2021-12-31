@@ -127,6 +127,7 @@ class Sweet:
         self.name = name
         self.im = load_image(self.name + '.png')
         self.eaten = False
+        self.eaten_coord = 325, 745
 
 class Board:
     # поле
@@ -191,9 +192,13 @@ class Board:
                     screen.fill((255, 255, 0), rect=(rct[0] + self.cell_size // 2 - 5,
                                                      rct[1] + self.cell_size // 2 - 5, 10, 10))
         screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
-        for s in self.sweets:
-            if not s.eaten:
-                screen.blit(s.im, (self.get_coords(s.pos)))
+        for i, s in enumerate(self.sweets):
+            if s.eaten:
+                x, y = s.eaten_coord
+                x += 50 * i
+            else:
+                x, y = self.get_coords(s.pos)
+            screen.blit(s.im, (x, y))
         for ghost in [self.ghost0, self.ghost1, self.angriest_ghost]:
             x, y = self.get_coords(ghost.pos)
             x += self.cell_size // 2
