@@ -2,6 +2,7 @@ import pygame
 import sys
 import os
 from math import ceil, floor
+from random import randint
 
 directions = {0: ((1, 0), 'right'),  # вправо
               1: ((-1, 0), 'left'),  # влево
@@ -166,14 +167,25 @@ class Chaser(Entity, Ghost):
 
 
 class Sweet:
-    def __init__(self, board, pos, name):
+    def __init__(self, board, name):
         self.board = board
-        self.pos = pos
+        self.pos = self.generate_pos()
         self.name = name
         self.im = load_image(self.name + '.png')
         self.collected = False  # собрано
         self.eaten = False  # съедено привидением
         self.collected_coord = 325, 745
+
+    def generate_pos(self):
+        w = self.board.width
+        h = self.board.height
+        n = randint(0, w * h)
+        pos = n % h, n // h
+        poses = [s.pos for s in self.board.sweets]
+        while pos in poses or self.board.board[pos[1]][pos[0]] == 1:
+            n = randint(0, w * h)
+            pos = n % h, n // h
+        return pos
 
 
 class Board:
@@ -201,10 +213,11 @@ class Board:
         self.top = 50
         self.cell_size = 50
         self.kush = Entity([1, 12], self, 'kush')  # игрок
-        donut = Sweet(self, (6, 9), 'donut')   # пончик
-        cherry = Sweet(self, (3, 12), 'cherry')    # вишенка
-        candy_cane = Sweet(self, (10, 0), 'candy cane')    # сахарная трость
-        self.sweets = [donut, cherry, candy_cane]
+        names = ['donut', 'cherry', 'candy cane']
+        self.sweets = []
+        for name in names:
+            sweet = Sweet(self, name)
+            self.sweets.append(sweet)
         self.chaser = Chaser([12, 3], self)  # привидение которое движется к игроку
         self.cloudy = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
                                            (5, 11), (5, 13), (3, 13), (3, 11),
