@@ -169,23 +169,13 @@ class Chaser(Entity, Ghost):
 class Sweet:
     def __init__(self, board, name):
         self.board = board
-        self.pos = self.generate_pos()
+        self.pos = self.board.generate_pos()
         self.name = name
         self.im = load_image(self.name + '.png')
         self.collected = False  # собрано
         self.eaten = False  # съедено привидением
         self.collected_coord = 325, 745
 
-    def generate_pos(self):
-        w = self.board.width
-        h = self.board.height
-        n = randint(0, w * h)
-        pos = n % h, n // h
-        poses = [s.pos for s in self.board.sweets]
-        while pos in poses or self.board.board[pos[1]][pos[0]] == 1:
-            n = randint(0, w * h)
-            pos = n % h, n // h
-        return pos
 
 
 class Board:
@@ -212,6 +202,8 @@ class Board:
         self.left = 50
         self.top = 50
         self.cell_size = 50
+        self.portal = False
+        self.portal_im = load_image('portal.png')
         self.kush = Entity([1, 12], self, 'kush')  # игрок
         names = ['donut', 'cherry', 'candy cane']
         self.sweets = []
@@ -238,6 +230,20 @@ class Board:
         for s in self.sweets:
             if self.kush.pos == s.pos and pygame.time.get_ticks() - self.kush.timer >= 5000:
                 s.collected = True
+        if self.portal == self.kush.pos:
+            print('you won :)')
+
+    def generate_pos(self):
+        w = self.width
+        h = self.height
+        n = randint(0, w * h)
+        pos = n % h, n // h
+        poses = [s.pos for s in self.sweets]
+        poses.append(self.kush.pos)
+        while pos in poses or self.board[pos[1]][pos[0]] == 1:
+            n = randint(0, w * h)
+            pos = n % h, n // h
+        return pos
 
     def render(self, screen):
         if pygame.time.get_ticks() - self.kush.timer >= 5000:
@@ -264,11 +270,19 @@ class Board:
                 else:
                     x, y = self.get_coords(s.pos)
                 screen.blit(s.im, (x, y))
+        if self.portal:
+            screen.blit(self.portal_im, self.get_coords(self.portal))
 
     def get_coords(self, pos):  # преобразует позицию клетки в кординаты её левого верхнего угла
         x = pos[0] * self.cell_size + self.left
         y = pos[1] * self.cell_size + self.top
         return [x, y]
+
+    def portal_necessity(self):
+        for line in self.board:
+            if not all([cell != 0 for cell in line]):
+                return False    # не все точки собраны
+        self.portal = self.generate_pos()   # все точки собраны, портал открылся
 
 
 if True:
@@ -295,6 +309,8 @@ if True:
         board.chaser.change_coords()
         board.cloudy.move()
         board.mandarin.move()
+        if not board.portal:
+            board.portal_necessity()
         board.check_collision()
         board.render(screen)
         pygame.display.flip()
