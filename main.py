@@ -3,6 +3,11 @@ import sys
 import os
 from math import ceil, floor
 
+directions = {0: ((1, 0), 'right'),  # вправо
+              1: ((-1, 0), 'left'),  # влево
+              2: ((0, 1), 'down'),  # вниз
+              3: ((0, -1), 'up'),  # вверх
+              -1: ((0, 0), 'stop')}   # стоп
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('images', name)
@@ -28,15 +33,11 @@ class Entity:  # сущность - думаю, можно или объедин
         self.name = name
         self.speed = 0.5  # от 0.1 до 1
         self.dir1 = (1, 0)  # освновное направление
-        self.dir2 = (
-        1, 0)  # если игрок изменил направление тогда, когда в том направлении была стена, записывается сюда
-        self.directions = {0: ((1, 0), 'right'),  # вправо
-                           1: ((-1, 0), 'left'),  # влево
-                           2: ((0, 1), 'down'),  # вниз
-                           3: ((0, -1), 'up')}  # вверх
+        self.dir2 = (1, 0)  # если игрок изменил направление тогда, когда в том направлении была стена, записывается сюда
+        self.timer = -5000
 
     def change_dir(self, dr):
-        self.dir2 = self.directions[dr][0]
+        self.dir2 = directions[dr][0]
 
     def can_move(self, direction):
         x, y = direction
@@ -66,24 +67,38 @@ class Entity:  # сущность - думаю, можно или объедин
         return False
 
     def get_image(self):
-        for dr in self.directions:
-            if self.directions[dr][0] == self.dir1:
-                direction = self.directions[dr][1]
+        # для картинок из таймаута
+        if pygame.time.get_ticks() - self.timer < 5000:
+            im = self.name + 'angry' + str(pygame.time.get_ticks() // 200 % 2) + '.png'
+            return load_image(im)
+        # находит название направления
+        for dr in directions:
+            if directions[dr][0] == self.dir1:
+                direction = directions[dr][1]
                 break
         im = self.name + direction + str(pygame.time.get_ticks() // 200 % 2) + '.png'
         return load_image(im)
 
+    def check_kush(self):
+        return
+
 
 class Ghost:
-    def __init__(self, pos, board, trajectory, color):
+    def __init__(self, pos, board, trajectory, color, name=None):
         self.color = color
+        self.name = name
         self.trajectory = trajectory
         self.board = board
         self.pos = pos
         self.point = 0  # к которой точке траектории направляется
         self.speed = 0.1
+        self.dir1 = (0, 1)
+        self.timer = -5000 # время последнего столкновения
 
     def move(self):
+        if pygame.time.get_ticks() - self.timer < 5000:
+            # призраки не двигаются в режиме таймаута
+            return
         if self.trajectory[self.point] == self.pos:
             self.point = (self.point + 1) % len(self.trajectory)
         x = self.trajectory[self.point][0] - self.pos[0]
@@ -92,9 +107,23 @@ class Ghost:
             x = abs(x) / x
         if y != 0:
             y = abs(y) / y
+        self.dir1 = (x, y)
         x1 = round(self.pos[0] + x * self.speed, 1)
         y1 = round(self.pos[1] + y * self.speed, 1)
         self.pos = x1, y1
+
+    def get_image(self):
+        return Entity.get_image(self)
+
+    def check_kush(self):
+        # если кушац пересекается с призраком, то оба входят в режим таймаута - меняют спрайт
+        # при этом кушац не может есть точки, а призраки не двигаются
+        pos1 = self.board.kush.pos
+        if abs(self.pos[0] - pos1[0]) < 0.5 and abs(self.pos[1] - pos1[1]) < 0.5 \
+                and pygame.time.get_ticks() - self.timer > 5000 and \
+                pygame.time.get_ticks() - self.board.kush.timer > 5000:
+            self.timer = pygame.time.get_ticks()
+            self.board.kush.timer = pygame.time.get_ticks()
 
 
 class Chaser(Entity, Ghost):
@@ -102,6 +131,7 @@ class Chaser(Entity, Ghost):
         super().__init__(board, pos, 'chaser')
         self.color = (225, 0, 255)
         self.speed = 0.1
+        self.timer = -5000
 
     def change_dir(self, dir_x, dir_y):
         if self.can_move(dir_x) and dir_x != (0, 0):
@@ -112,12 +142,19 @@ class Chaser(Entity, Ghost):
             self.dir2 = (0, 0)
 
     def change_coords(self):
+        if pygame.time.get_ticks() - self.timer < 5000:
+            return
+            # чейзер, как и остальные призраки, не двигается в таймауте
         deltax = self.board.kush.pos[0] - self.pos[0]
         deltay = self.board.kush.pos[1] - self.pos[1]
         dir_x = (abs(deltax) / deltax if deltax != 0 else 0, 0)
         dir_y = (0, abs(deltay) / deltay if deltay != 0 else 0)
         self.change_dir(dir_x, dir_y)
         super().change_coords()
+
+    def check_kush(self):
+        Ghost.check_kush(self)
+
 
 
 class Sweet:
@@ -158,21 +195,21 @@ class Board:
         cherry = Sweet(self, (3, 12), 'cherry')    # вишенка
         candy_cane = Sweet(self, (10, 0), 'candy cane')    # сахарная трость
         self.sweets = [donut, cherry, candy_cane]
-        self.angriest_ghost = Chaser([12, 3], self)  # привидение которое движется к игроку
-        self.ghost0 = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
+        self.chaser = Chaser([12, 3], self)  # привидение которое движется к игроку
+        self.cloudy = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
                                            (5, 11), (5, 13), (3, 13), (3, 11),
                                            (6, 11), (6, 12), (7, 12), (7, 13),
                                            (9, 13), (9, 9), (13, 9),
                                            (13, 12), (12, 12), (12, 13), (10, 13),
                                            (10, 12), (9, 12), (9, 10), (6, 10),
                                            (6, 11), (4, 11), (4, 9), (3, 9),
-                                           (3, 2), (1, 2), (1, 0)], (205, 92, 92))
-        self.ghost1 = Ghost((10, 2), self, [(10, 0), (12, 0), (12, 1), (13, 1),
+                                           (3, 2), (1, 2), (1, 0)], (205, 92, 92), name='cloudy')
+        self.mandarin = Ghost((10, 2), self, [(10, 0), (12, 0), (12, 1), (13, 1),
                                             (13, 3), (6, 3), (9, 3), (9, 0),
                                             (7, 0), (7, 1), (5, 1), (5, 2),
                                             (0, 2), (0, 1), (1, 1), (1, 0), (3, 0),
                                             (3, 3), (4, 3), (4, 2), (5, 2),
-                                            (5, 0), (9, 0), (9, 2), (10, 2)], (255, 140, 0))
+                                            (5, 0), (9, 0), (9, 2), (10, 2)], (255, 140, 0), name='mandarin')
 
     def check_collision(self):
         for s in self.sweets:
@@ -180,10 +217,11 @@ class Board:
                 s.eaten = True
 
     def render(self, screen):
-        x, y = self.kush.pos
-        x = int(int(x) + (x - int(x)) // 0.5)
-        y = int(int(y) + (y - int(y)) // 0.5)
-        self.board[y][x] = 2
+        if pygame.time.get_ticks() - self.kush.timer >= 5000:
+            x, y = self.kush.pos
+            x = int(int(x) + (x - int(x)) // 0.5)
+            y = int(int(y) + (y - int(y)) // 0.5)
+            self.board[y][x] = 2
         for i in range(self.width):
             for j in range(self.height):
                 cell = self.board[j][i]
@@ -191,6 +229,9 @@ class Board:
                 if cell == 0:  # точки
                     screen.fill((255, 255, 0), rect=(rct[0] + self.cell_size // 2 - 5,
                                                      rct[1] + self.cell_size // 2 - 5, 10, 10))
+        for character in (self.kush, self.cloudy, self.chaser, self.mandarin):
+            screen.blit(character.get_image(), (self.get_coords(character.pos)))
+            character.check_kush()
         screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
         for i, s in enumerate(self.sweets):
             if s.eaten:
@@ -199,11 +240,6 @@ class Board:
             else:
                 x, y = self.get_coords(s.pos)
             screen.blit(s.im, (x, y))
-        for ghost in [self.ghost0, self.ghost1, self.angriest_ghost]:
-            x, y = self.get_coords(ghost.pos)
-            x += self.cell_size // 2
-            y += self.cell_size // 2
-            pygame.draw.circle(screen, ghost.color, (x, y), self.cell_size // 2)
 
     def get_coords(self, pos):  # преобразует позицию клетки в кординаты её левого верхнего угла
         x = pos[0] * self.cell_size + self.left
@@ -232,9 +268,9 @@ if True:
         clock.tick(50)
         screen.blit(load_image('background' + str(pygame.time.get_ticks() // 500 % 2) + '.png'), (0, 0))
         board.kush.change_coords()
-        board.angriest_ghost.change_coords()
-        board.ghost0.move()
-        board.ghost1.move()
+        board.chaser.change_coords()
+        board.cloudy.move()
+        board.mandarin.move()
         board.check_collision()
         board.render(screen)
         pygame.display.flip()
