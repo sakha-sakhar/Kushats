@@ -9,6 +9,7 @@ directions = {0: ((1, 0), 'right'),  # вправо
               3: ((0, -1), 'up'),  # вверх
               -1: ((0, 0), 'stop')}   # стоп
 
+
 def load_image(name, colorkey=None):
     fullname = os.path.join('images', name)
     # если файл не существует, то выходим
@@ -124,6 +125,14 @@ class Ghost:
                 pygame.time.get_ticks() - self.board.kush.timer > 5000:
             self.timer = pygame.time.get_ticks()
             self.board.kush.timer = pygame.time.get_ticks()
+            survive = False
+            for s in self.board.sweets:
+                if s.collected and not s.eaten:
+                    s.eaten = True
+                    survive = True
+                    break
+            if not survive:
+                print('you dead :(')
 
 
 class Chaser(Entity, Ghost):
@@ -156,15 +165,16 @@ class Chaser(Entity, Ghost):
         Ghost.check_kush(self)
 
 
-
 class Sweet:
     def __init__(self, board, pos, name):
         self.board = board
         self.pos = pos
         self.name = name
         self.im = load_image(self.name + '.png')
-        self.eaten = False
-        self.eaten_coord = 325, 745
+        self.collected = False  # собрано
+        self.eaten = False  # съедено привидением
+        self.collected_coord = 325, 745
+
 
 class Board:
     # поле
@@ -214,7 +224,7 @@ class Board:
     def check_collision(self):
         for s in self.sweets:
             if self.kush.pos == s.pos and pygame.time.get_ticks() - self.kush.timer >= 5000:
-                s.eaten = True
+                s.collected = True
 
     def render(self, screen):
         if pygame.time.get_ticks() - self.kush.timer >= 5000:
@@ -234,12 +244,13 @@ class Board:
             character.check_kush()
         screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
         for i, s in enumerate(self.sweets):
-            if s.eaten:
-                x, y = s.eaten_coord
-                x += 50 * i
-            else:
-                x, y = self.get_coords(s.pos)
-            screen.blit(s.im, (x, y))
+            if not s.eaten:
+                if s.collected:
+                    x, y = s.collected_coord
+                    x += 50 * i
+                else:
+                    x, y = self.get_coords(s.pos)
+                screen.blit(s.im, (x, y))
 
     def get_coords(self, pos):  # преобразует позицию клетки в кординаты её левого верхнего угла
         x = pos[0] * self.cell_size + self.left
@@ -275,3 +286,4 @@ if True:
         board.render(screen)
         pygame.display.flip()
     pygame.quit()
+
