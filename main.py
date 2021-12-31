@@ -34,6 +34,7 @@ class Entity:  # сущность - думаю, можно или объедин
         self.speed = 0.5  # от 0.1 до 1
         self.dir1 = (1, 0)  # освновное направление
         self.dir2 = (1, 0)  # если игрок изменил направление тогда, когда в том направлении была стена, записывается сюда
+        self.timer = -5000
 
     def change_dir(self, dr):
         self.dir2 = directions[dr][0]
@@ -66,12 +67,18 @@ class Entity:  # сущность - думаю, можно или объедин
         return False
 
     def get_image(self):
+        if pygame.time.get_ticks() - self.timer < 5000:
+            im = self.name + 'angry' + str(pygame.time.get_ticks() // 200 % 2) + '.png'
+            return load_image(im)
         for dr in directions:
             if directions[dr][0] == self.dir1:
                 direction = directions[dr][1]
                 break
         im = self.name + direction + str(pygame.time.get_ticks() // 200 % 2) + '.png'
         return load_image(im)
+
+    def check_kush(self):
+        return
 
 
 class Ghost:
@@ -84,8 +91,11 @@ class Ghost:
         self.point = 0  # к которой точке траектории направляется
         self.speed = 0.1
         self.dir = (0, 1)
+        self.timer = -5000 # время последнего столкновения
 
     def move(self):
+        if pygame.time.get_ticks() - self.timer < 5000:
+            return
         if self.trajectory[self.point] == self.pos:
             self.point = (self.point + 1) % len(self.trajectory)
         x = self.trajectory[self.point][0] - self.pos[0]
@@ -102,6 +112,9 @@ class Ghost:
     def get_image(self):
         if not self.name:
             return load_image('noimage.png')
+        if pygame.time.get_ticks() - self.timer < 5000:
+            im = self.name + 'angry' + str(pygame.time.get_ticks() // 200 % 2) + '.png'
+            return load_image(im)
         for dr in directions:
             if directions[dr][0] == self.dir:
                 direction = directions[dr][1]
@@ -109,12 +122,19 @@ class Ghost:
         im = self.name + direction + str(pygame.time.get_ticks() // 200 % 2) + '.png'
         return load_image(im)
 
+    def check_kush(self):
+        if self.pos == self.board.kush.pos and pygame.time.get_ticks() - self.timer > 5000 and \
+                pygame.time.get_ticks() - self.board.kush.timer > 5000:
+            self.timer = pygame.time.get_ticks()
+            self.board.kush.timer = pygame.time.get_ticks()
+
 
 class Chaser(Entity, Ghost):
     def __init__(self, board, pos):
         super().__init__(board, pos, 'chaser')
         self.color = (225, 0, 255)
         self.speed = 0.1
+        self.timer = -5000
 
     def change_dir(self, dir_x, dir_y):
         if self.can_move(dir_x) and dir_x != (0, 0):
@@ -125,12 +145,18 @@ class Chaser(Entity, Ghost):
             self.dir2 = (0, 0)
 
     def change_coords(self):
+        if pygame.time.get_ticks() - self.timer < 5000:
+            return
         deltax = self.board.kush.pos[0] - self.pos[0]
         deltay = self.board.kush.pos[1] - self.pos[1]
         dir_x = (abs(deltax) / deltax if deltax != 0 else 0, 0)
         dir_y = (0, abs(deltay) / deltay if deltay != 0 else 0)
         self.change_dir(dir_x, dir_y)
         super().change_coords()
+
+    def check_kush(self):
+        Ghost.check_kush(self)
+
 
 
 class Board:
@@ -175,10 +201,11 @@ class Board:
                                             (5, 0), (9, 0), (9, 2), (10, 2)], (255, 140, 0), name='mandarin')
 
     def render(self, screen):
-        x, y = self.kush.pos
-        x = int(int(x) + (x - int(x)) // 0.5)
-        y = int(int(y) + (y - int(y)) // 0.5)
-        self.board[y][x] = 2
+        if pygame.time.get_ticks() - self.kush.timer >= 5000:
+            x, y = self.kush.pos
+            x = int(int(x) + (x - int(x)) // 0.5)
+            y = int(int(y) + (y - int(y)) // 0.5)
+            self.board[y][x] = 2
         for i in range(self.width):
             for j in range(self.height):
                 cell = self.board[j][i]
@@ -186,10 +213,9 @@ class Board:
                 if cell == 0:  # точки
                     screen.fill((255, 255, 0), rect=(rct[0] + self.cell_size // 2 - 5,
                                                      rct[1] + self.cell_size // 2 - 5, 10, 10))
-        screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
-        screen.blit(self.cloudy.get_image(), (self.get_coords(self.cloudy.pos)))
-        screen.blit(self.chaser.get_image(), (self.get_coords(self.chaser.pos)))
-        screen.blit(self.mandarin.get_image(), (self.get_coords(self.mandarin.pos)))
+        for character in (self.kush, self.cloudy, self.chaser, self.mandarin):
+            screen.blit(character.get_image(), (self.get_coords(character.pos)))
+            character.check_kush()
 
     def get_coords(self, pos):  # преобразует позицию клетки в кординаты её левого верхнего угла
         x = pos[0] * self.cell_size + self.left
