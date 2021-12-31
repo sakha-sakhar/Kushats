@@ -67,9 +67,11 @@ class Entity:  # сущность - думаю, можно или объедин
         return False
 
     def get_image(self):
+        # для картинок из таймаута
         if pygame.time.get_ticks() - self.timer < 5000:
             im = self.name + 'angry' + str(pygame.time.get_ticks() // 200 % 2) + '.png'
             return load_image(im)
+        # находит название направления
         for dr in directions:
             if directions[dr][0] == self.dir1:
                 direction = directions[dr][1]
@@ -90,11 +92,12 @@ class Ghost:
         self.pos = pos
         self.point = 0  # к которой точке траектории направляется
         self.speed = 0.1
-        self.dir = (0, 1)
+        self.dir1 = (0, 1)
         self.timer = -5000 # время последнего столкновения
 
     def move(self):
         if pygame.time.get_ticks() - self.timer < 5000:
+            # призраки не двигаются в режиме таймаута
             return
         if self.trajectory[self.point] == self.pos:
             self.point = (self.point + 1) % len(self.trajectory)
@@ -104,25 +107,17 @@ class Ghost:
             x = abs(x) / x
         if y != 0:
             y = abs(y) / y
-        self.dir = (x, y)
+        self.dir1 = (x, y)
         x1 = round(self.pos[0] + x * self.speed, 1)
         y1 = round(self.pos[1] + y * self.speed, 1)
         self.pos = x1, y1
 
     def get_image(self):
-        if not self.name:
-            return load_image('noimage.png')
-        if pygame.time.get_ticks() - self.timer < 5000:
-            im = self.name + 'angry' + str(pygame.time.get_ticks() // 200 % 2) + '.png'
-            return load_image(im)
-        for dr in directions:
-            if directions[dr][0] == self.dir:
-                direction = directions[dr][1]
-                break
-        im = self.name + direction + str(pygame.time.get_ticks() // 200 % 2) + '.png'
-        return load_image(im)
+        return Entity.get_image(self)
 
     def check_kush(self):
+        # если кушац пересекается с призраком, то оба входят в режим таймаута - меняют спрайт
+        # при этом кушац не может есть точки, а призраки не двигаются
         pos1 = self.board.kush.pos
         if abs(self.pos[0] - pos1[0]) < 0.5 and abs(self.pos[1] - pos1[1]) < 0.5 \
                 and pygame.time.get_ticks() - self.timer > 5000 and \
@@ -149,6 +144,7 @@ class Chaser(Entity, Ghost):
     def change_coords(self):
         if pygame.time.get_ticks() - self.timer < 5000:
             return
+            # чейзер, как и остальные призраки, не двигается в таймауте
         deltax = self.board.kush.pos[0] - self.pos[0]
         deltay = self.board.kush.pos[1] - self.pos[1]
         dir_x = (abs(deltax) / deltax if deltax != 0 else 0, 0)
