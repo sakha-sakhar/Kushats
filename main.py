@@ -120,6 +120,14 @@ class Chaser(Entity, Ghost):
         super().change_coords()
 
 
+class Sweet:
+    def __init__(self, board, pos, name):
+        self.board = board
+        self.pos = pos
+        self.name = name
+        self.im = load_image(self.name + '.png')
+        self.eaten = False
+
 class Board:
     # поле
     def __init__(self, width, height):
@@ -145,6 +153,10 @@ class Board:
         self.top = 50
         self.cell_size = 50
         self.kush = Entity([1, 12], self, 'kush')  # игрок
+        donut = Sweet(self, (6, 9), 'donut')   # пончик
+        cherry = Sweet(self, (3, 12), 'cherry')    # вишенка
+        candy_cane = Sweet(self, (10, 0), 'candy cane')    # сахарная трость
+        self.sweets = [donut, cherry, candy_cane]
         self.angriest_ghost = Chaser([12, 3], self)  # привидение которое движется к игроку
         self.ghost0 = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
                                            (5, 11), (5, 13), (3, 13), (3, 11),
@@ -161,6 +173,11 @@ class Board:
                                             (3, 3), (4, 3), (4, 2), (5, 2),
                                             (5, 0), (9, 0), (9, 2), (10, 2)], (255, 140, 0))
 
+    def check_collision(self):
+        for s in self.sweets:
+            if self.kush.pos == s.pos:
+                s.eaten = True
+
     def render(self, screen):
         x, y = self.kush.pos
         x = int(int(x) + (x - int(x)) // 0.5)
@@ -174,6 +191,9 @@ class Board:
                     screen.fill((255, 255, 0), rect=(rct[0] + self.cell_size // 2 - 5,
                                                      rct[1] + self.cell_size // 2 - 5, 10, 10))
         screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
+        for s in self.sweets:
+            if not s.eaten:
+                screen.blit(s.im, (self.get_coords(s.pos)))
         for ghost in [self.ghost0, self.ghost1, self.angriest_ghost]:
             x, y = self.get_coords(ghost.pos)
             x += self.cell_size // 2
@@ -204,12 +224,13 @@ if True:
                     board.kush.change_dir(event.key - 1073741903)
                 else:
                     print(event.key)
-        clock.tick(120)
+        clock.tick(50)
         screen.blit(load_image('background' + str(pygame.time.get_ticks() // 500 % 2) + '.png'), (0, 0))
         board.kush.change_coords()
         board.angriest_ghost.change_coords()
         board.ghost0.move()
         board.ghost1.move()
+        board.check_collision()
         board.render(screen)
         pygame.display.flip()
     pygame.quit()
