@@ -123,7 +123,9 @@ class Ghost:
         return load_image(im)
 
     def check_kush(self):
-        if self.pos == self.board.kush.pos and pygame.time.get_ticks() - self.timer > 5000 and \
+        pos1 = self.board.kush.pos
+        if abs(self.pos[0] - pos1[0]) < 0.5 and abs(self.pos[1] - pos1[1]) < 0.5 \
+                and pygame.time.get_ticks() - self.timer > 5000 and \
                 pygame.time.get_ticks() - self.board.kush.timer > 5000:
             self.timer = pygame.time.get_ticks()
             self.board.kush.timer = pygame.time.get_ticks()
