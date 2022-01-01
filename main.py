@@ -28,6 +28,25 @@ def load_image(name, colorkey=None):
     return image
 
 
+def load_font(name):
+    found = True
+    fullname = os.path.join('fonts', name)
+    if not os.path.isfile(fullname):
+        found = False
+        print(f'Файл со шрифтом {fullname} не найден')
+        fonts = ['18534.TTF', '18963.TTF', '18949.TTF', '18536.TTF']
+        for font in fonts:
+            fullname = os.path.join('fonts', font)
+            if os.path.isfile(fullname):
+                print(f'Найден файл со шрифтом {fullname}')
+                found = True
+                break
+    if found:
+        return pygame.font.Font(fullname, 32)
+    else:
+        sys.exit()
+
+
 class Entity:  # сущность - думаю, можно или объединить в этом классе игрока и призраков, либо какие-то из них унаследовать от этого класса.
     def __init__(self, pos, board, name):
         self.board = board
@@ -184,7 +203,6 @@ class Sweet:
         self.collected_coord = 325, 745
 
 
-
 class Board:
     # поле
     def __init__(self, width, height):
@@ -210,7 +228,8 @@ class Board:
         self.left = 50
         self.top = 50
         self.cell_size = 50
-        self.portal = False
+        self.portal = False    # портала нет, пока не собраны все точки
+        self.font = load_font('18534.TTF')
         self.portal_im = load_image('portal.png')
         self.kush = Entity([1, 12], self, 'kush')  # игрок
         self.sweets = []
@@ -240,10 +259,21 @@ class Board:
         if self.portal == self.kush.pos and self.kush.check_state():
             self.gameend = 2
 
+    def scoring_points(self):   # подсчёт очков
+        score = 0
+        for sweet in self.sweets:
+            if sweet.collected:
+                score += 464
+            if sweet.eaten:
+                score -= 1000
+        for line in self.board:
+            score += (line.count(2) * 12)
+        return score
+
     def generate_pos(self):
         w = self.width
         h = self.height
-        n = randint(0, w * h)
+        n = randint(0, w * h - 1)
         pos = n % h, n // h
         poses = [s.pos for s in self.sweets]
         poses.append(self.kush.pos)
@@ -281,6 +311,9 @@ class Board:
             screen.blit(self.portal_im, self.get_coords(self.portal))
         else:
             self.portal_necessity()
+        score = self.scoring_points()
+        score_text = self.font.render(f'Score: {score}', True, (255, 217, 82))
+        screen.blit(score_text, (555, 5))
 
     def get_coords(self, pos):  # преобразует позицию клетки в кординаты её левого верхнего угла
         x = pos[0] * self.cell_size + self.left
