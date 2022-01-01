@@ -197,7 +197,8 @@ class Sweet:
         self.board = board
         self.pos = self.board.generate_pos()
         self.name = name
-        self.im = load_image(self.name + '.png')
+        self.imsmall = load_image(self.name + '.png')
+        self.imbig = load_image(self.name + '_big.png')
         self.collected = False  # собрано
         self.eaten = False  # съедено привидением
 
@@ -292,12 +293,10 @@ class Board:
         screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
         for i, s in enumerate(self.sweets):
             if not s.eaten:
-                y = 755
                 if s.collected:
-                    x = 335 + 46 * i
+                    screen.blit(s.imsmall, (335 + 46 * i, 755))
                 else:
-                    x, y = self.get_coords(s.pos)
-                screen.blit(s.im, (x, y))
+                    screen.blit(s.imbig, self.get_coords(s.pos))
         if self.portal:
             screen.blit(self.portal_im, self.get_coords(self.portal))
         else:
@@ -323,7 +322,37 @@ size = width, height = 800, 800
 screen = pygame.display.set_mode(size)
 screen.blit(load_image('background0.png'), (0, 0))
 clock = pygame.time.Clock()
+running = True
 mainrunning = True
+while running:
+    x, y = pygame.mouse.get_pos()
+    ngstate = 'base'
+    qstate = 'base'
+    if 250 < x < 550 and 400 < y < 500:
+        ngstate = 'selected'
+    elif 250 < x < 550 and 500 < y < 610:
+        qstate = 'selected'
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            mainrunning = False
+            running = False
+        elif event.type == pygame.KEYUP and event.key == 32:
+            running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if 250 < x < 550 and 400 < y < 500:
+                ngstate = 'pressed'
+            elif 250 < x < 550 and 500 < y < 610:
+                qstate = 'pressed'
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if 250 < x < 550 and 500 < y < 610:
+                running = False
+                mainrunning = False
+            elif 250 < x < 550 and 400 < y < 500:
+                running = False
+    screen.blit(load_image('mainmenu.png'), (0, 0))
+    screen.blit(load_image('newgame' + ngstate + '.png'), (0, 0))
+    screen.blit(load_image('quit' + qstate + '.png'), (0, 0))
+    pygame.display.flip()
 while mainrunning:
     board = Board(14, 14)
     while not board.gameend:
