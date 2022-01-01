@@ -255,6 +255,9 @@ class Board:
         self.ghost_sound = pygame.mixer.Sound('sounds/ghost attack.mp3')
         self.sweet_sound = pygame.mixer.Sound('sounds/sweet collected.mp3')
         self.won_sound = pygame.mixer.Sound('sounds/won.mp3')
+        self.points_sound = pygame.mixer.Sound('sounds/eating points.mp3')
+        self.points_sound.set_volume(0.5)
+        self.points_sound_timer = -1000
 
     def check_collision(self):
         for s in self.sweets:
@@ -285,9 +288,9 @@ class Board:
             y = int(int(y) + (y - int(y)) // 0.5)
             if self.board[y][x] == 0:
                 self.score += 12
-                pygame.mixer.music.unpause()
-            else:
-                pygame.mixer.music.pause()
+                if pygame.time.get_ticks() - self.points_sound_timer > 1000:
+                    self.points_sound.play(0, 1000)
+                    self.points_sound_timer = pygame.time.get_ticks()
             self.board[y][x] = 2
         for i in range(self.width):
             for j in range(self.height):
@@ -335,7 +338,7 @@ clock = pygame.time.Clock()
 running = True
 mainrunning = True
 pygame.mixer.music.load('sounds/menu.mp3')
-pygame.mixer.music.play(-1)
+pygame.mixer.music.play(-1, 5000)
 while running:
     x, y = pygame.mouse.get_pos()
     ngstate = 'base'
@@ -365,12 +368,10 @@ while running:
     screen.blit(load_image('newgame' + ngstate + '.png'), (0, 0))
     screen.blit(load_image('quit' + qstate + '.png'), (0, 0))
     pygame.display.flip()
-pygame.mixer.music.unload()
-pygame.mixer.music.load('sounds/start.mp3')
-pygame.mixer.music.play()
-pygame.mixer.music.load('sounds/eating points.mp3')
-pygame.mixer.music.play(-1)
 while mainrunning:
+    pygame.mixer.music.unload()
+    pygame.mixer.music.load('sounds/start.mp3')
+    pygame.mixer.music.play()
     board = Board(14, 14)
     while not board.gameend:
         for event in pygame.event.get():
@@ -392,6 +393,8 @@ while mainrunning:
         pygame.display.flip()
     pygame.time.wait(1000)
     running = True
+    pygame.mixer.music.load('sounds/menu.mp3')
+    pygame.mixer.music.play(-1, 5000)
     while running:
         x, y = pygame.mouse.get_pos()
         if 250 < x < 550 and 400 < y < 500:
