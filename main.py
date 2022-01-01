@@ -197,7 +197,8 @@ class Sweet:
         self.board = board
         self.pos = self.board.generate_pos()
         self.name = name
-        self.im = load_image(self.name + '.png')
+        self.imsmall = load_image(self.name + '.png')
+        self.imbig = load_image(self.name + '_big.png')
         self.collected = False  # собрано
         self.eaten = False  # съедено привидением
 
@@ -292,12 +293,10 @@ class Board:
         screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
         for i, s in enumerate(self.sweets):
             if not s.eaten:
-                y = 755
                 if s.collected:
-                    x = 335 + 46 * i
+                    screen.blit(s.imsmall, (335 + 46 * i, 755))
                 else:
-                    x, y = self.get_coords(s.pos)
-                screen.blit(s.im, (x, y))
+                    screen.blit(s.imbig, self.get_coords(s.pos))
         if self.portal:
             screen.blit(self.portal_im, self.get_coords(self.portal))
         else:
