@@ -322,7 +322,37 @@ size = width, height = 800, 800
 screen = pygame.display.set_mode(size)
 screen.blit(load_image('background0.png'), (0, 0))
 clock = pygame.time.Clock()
+running = True
 mainrunning = True
+while running:
+    x, y = pygame.mouse.get_pos()
+    ngstate = 'base'
+    qstate = 'base'
+    if 250 < x < 550 and 400 < y < 500:
+        ngstate = 'selected'
+    elif 250 < x < 550 and 500 < y < 610:
+        qstate = 'selected'
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            mainrunning = False
+            running = False
+        elif event.type == pygame.KEYUP and event.key == 32:
+            running = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if 250 < x < 550 and 400 < y < 500:
+                ngstate = 'pressed'
+            elif 250 < x < 550 and 500 < y < 610:
+                qstate = 'pressed'
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if 250 < x < 550 and 500 < y < 610:
+                running = False
+                mainrunning = False
+            elif 250 < x < 550 and 400 < y < 500:
+                running = False
+    screen.blit(load_image('mainmenu.png'), (0, 0))
+    screen.blit(load_image('newgame' + ngstate + '.png'), (0, 0))
+    screen.blit(load_image('quit' + qstate + '.png'), (0, 0))
+    pygame.display.flip()
 while mainrunning:
     board = Board(14, 14)
     while not board.gameend:
