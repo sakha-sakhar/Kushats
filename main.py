@@ -288,7 +288,7 @@ class Board:
             y = int(int(y) + (y - int(y)) // 0.5)
             if self.board[y][x] == 0:
                 self.score += 12
-                if pygame.time.get_ticks() - self.points_sound_timer > 1000:
+                if pygame.time.get_ticks() - self.points_sound_timer > 50:
                     self.points_sound.play(0, 1000)
                     self.points_sound_timer = pygame.time.get_ticks()
             self.board[y][x] = 2
@@ -338,7 +338,7 @@ clock = pygame.time.Clock()
 running = True
 mainrunning = True
 pygame.mixer.music.load('sounds/menu.mp3')
-pygame.mixer.music.play(-1, 5000)
+pygame.mixer.music.play(-1, 5000, 1000)
 while running:
     x, y = pygame.mouse.get_pos()
     ngstate = 'base'
@@ -371,7 +371,7 @@ while running:
 while mainrunning:
     pygame.mixer.music.unload()
     pygame.mixer.music.load('sounds/start.mp3')
-    pygame.mixer.music.play()
+    pygame.mixer.music.play(fade_ms=100)
     board = Board(14, 14)
     while not board.gameend:
         for event in pygame.event.get():
@@ -391,10 +391,10 @@ while mainrunning:
         board.check_collision()
         board.render(screen)
         pygame.display.flip()
-    pygame.time.wait(1000)
+    pygame.time.wait(1500)
     running = True
     pygame.mixer.music.load('sounds/menu.mp3')
-    pygame.mixer.music.play(-1, 5000)
+    pygame.mixer.music.play(-1, 5000, 1000)
     while running:
         x, y = pygame.mouse.get_pos()
         if 250 < x < 550 and 400 < y < 500:
