@@ -147,6 +147,7 @@ class Ghost:
                 self.board.kush.check_state():
             self.timer = pygame.time.get_ticks()
             self.board.kush.timer = pygame.time.get_ticks()
+            self.board.ghost_sound.play()
             survive = False
             for s in self.board.sweets:
                 if s.collected and not s.eaten:
@@ -156,7 +157,6 @@ class Ghost:
                     break
             if not survive:
                 self.board.gameend = 1
-
 
     def check_state(self):
         return pygame.time.get_ticks() - self.timer > 5000
@@ -201,6 +201,7 @@ class Sweet:
         self.imbig = load_image(self.name + '_big.png')
         self.collected = False  # собрано
         self.eaten = False  # съедено привидением
+
 
 class Board:
     # поле
@@ -251,14 +252,19 @@ class Board:
                                             (3, 3), (4, 3), (4, 2), (5, 2),
                                             (5, 0), (9, 0), (9, 2), (10, 2)], (255, 140, 0), name='mandarin')
         self.score = 0
+        self.ghost_sound = pygame.mixer.Sound('sounds/ghost attack.mp3')
+        self.sweet_sound = pygame.mixer.Sound('sounds/sweet collected.mp3')
+        self.won_sound = pygame.mixer.Sound('sounds/won.mp3')
 
     def check_collision(self):
         for s in self.sweets:
             if self.kush.pos == s.pos and self.kush.check_state() and not s.collected:
                 s.collected = True
                 self.score += 464
+                self.sweet_sound.play()
         if self.portal == self.kush.pos and self.kush.check_state():
             self.gameend = 2
+            self.won_sound.play()
 
     def generate_pos(self):
         w = self.width
@@ -279,6 +285,9 @@ class Board:
             y = int(int(y) + (y - int(y)) // 0.5)
             if self.board[y][x] == 0:
                 self.score += 12
+                pygame.mixer.music.unpause()
+            else:
+                pygame.mixer.music.pause()
             self.board[y][x] = 2
         for i in range(self.width):
             for j in range(self.height):
@@ -325,6 +334,8 @@ screen.blit(load_image('background0.png'), (0, 0))
 clock = pygame.time.Clock()
 running = True
 mainrunning = True
+pygame.mixer.music.load('sounds/menu.mp3')
+pygame.mixer.music.play(-1)
 while running:
     x, y = pygame.mouse.get_pos()
     ngstate = 'base'
@@ -354,6 +365,11 @@ while running:
     screen.blit(load_image('newgame' + ngstate + '.png'), (0, 0))
     screen.blit(load_image('quit' + qstate + '.png'), (0, 0))
     pygame.display.flip()
+pygame.mixer.music.unload()
+pygame.mixer.music.load('sounds/start.mp3')
+pygame.mixer.music.play()
+pygame.mixer.music.load('sounds/eating points.mp3')
+pygame.mixer.music.play(-1)
 while mainrunning:
     board = Board(14, 14)
     while not board.gameend:
