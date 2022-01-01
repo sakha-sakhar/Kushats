@@ -70,7 +70,7 @@ class Entity:  # сущность - думаю, можно или объедин
 
     def get_image(self):
         # для картинок из таймаута
-        if pygame.time.get_ticks() - self.timer < 5000:
+        if not self.check_state():
             im = self.name + 'angry' + str(pygame.time.get_ticks() // 200 % 2) + '.png'
             return load_image(im)
         # находит название направления
@@ -83,6 +83,9 @@ class Entity:  # сущность - думаю, можно или объедин
 
     def check_kush(self):
         return
+
+    def check_state(self):
+        return pygame.time.get_ticks() - self.timer > 5000
 
 
 class Ghost:
@@ -98,7 +101,7 @@ class Ghost:
         self.timer = -5000 # время последнего столкновения
 
     def move(self):
-        if pygame.time.get_ticks() - self.timer < 5000:
+        if not self.check_state():
             # призраки не двигаются в режиме таймаута
             return
         if self.trajectory[self.point] == self.pos:
@@ -122,8 +125,8 @@ class Ghost:
         # при этом кушац не может есть точки, а призраки не двигаются
         pos1 = self.board.kush.pos
         if abs(self.pos[0] - pos1[0]) < 0.5 and abs(self.pos[1] - pos1[1]) < 0.5 \
-                and pygame.time.get_ticks() - self.timer > 5000 and \
-                pygame.time.get_ticks() - self.board.kush.timer > 5000:
+                and self.check_state() and \
+                self.board.kush.check_state():
             self.timer = pygame.time.get_ticks()
             self.board.kush.timer = pygame.time.get_ticks()
             survive = False
@@ -134,6 +137,10 @@ class Ghost:
                     break
             if not survive:
                 print('you dead :(')
+
+
+    def check_state(self):
+        return pygame.time.get_ticks() - self.timer > 5000
 
 
 class Chaser(Entity, Ghost):
@@ -152,7 +159,7 @@ class Chaser(Entity, Ghost):
             self.dir2 = (0, 0)
 
     def change_coords(self):
-        if pygame.time.get_ticks() - self.timer < 5000:
+        if not self.check_state():
             return
             # чейзер, как и остальные призраки, не двигается в таймауте
         deltax = self.board.kush.pos[0] - self.pos[0]
@@ -205,9 +212,8 @@ class Board:
         self.portal = False
         self.portal_im = load_image('portal.png')
         self.kush = Entity([1, 12], self, 'kush')  # игрок
-        names = ['donut', 'cherry', 'candy cane']
         self.sweets = []
-        for name in names:
+        for name in ['donut', 'cherry', 'candy cane']:
             sweet = Sweet(self, name)
             self.sweets.append(sweet)
         self.chaser = Chaser([12, 3], self)  # привидение которое движется к игроку
@@ -228,9 +234,9 @@ class Board:
 
     def check_collision(self):
         for s in self.sweets:
-            if self.kush.pos == s.pos and pygame.time.get_ticks() - self.kush.timer >= 5000:
+            if self.kush.pos == s.pos and self.kush.check_state():
                 s.collected = True
-        if self.portal == self.kush.pos:
+        if self.portal == self.kush.pos and self.kush.check_state():
             print('you won :)')
 
     def generate_pos(self):
@@ -246,7 +252,7 @@ class Board:
         return pos
 
     def render(self, screen):
-        if pygame.time.get_ticks() - self.kush.timer >= 5000:
+        if self.kush.check_state():
             x, y = self.kush.pos
             x = int(int(x) + (x - int(x)) // 0.5)
             y = int(int(y) + (y - int(y)) // 0.5)
@@ -272,6 +278,8 @@ class Board:
                 screen.blit(s.im, (x, y))
         if self.portal:
             screen.blit(self.portal_im, self.get_coords(self.portal))
+        else:
+            self.portal_necessity()
 
     def get_coords(self, pos):  # преобразует позицию клетки в кординаты её левого верхнего угла
         x = pos[0] * self.cell_size + self.left
@@ -309,10 +317,7 @@ if True:
         board.chaser.change_coords()
         board.cloudy.move()
         board.mandarin.move()
-        if not board.portal:
-            board.portal_necessity()
         board.check_collision()
         board.render(screen)
         pygame.display.flip()
     pygame.quit()
-
