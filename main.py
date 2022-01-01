@@ -202,7 +202,6 @@ class Sweet:
         self.collected = False  # собрано
         self.eaten = False  # съедено привидением
 
-
 class Board:
     # поле
     def __init__(self, width, height):
