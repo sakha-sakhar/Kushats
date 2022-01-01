@@ -136,7 +136,7 @@ class Ghost:
                     survive = True
                     break
             if not survive:
-                print('you dead :(')
+                self.board.gameend = 1
 
 
     def check_state(self):
@@ -188,6 +188,7 @@ class Sweet:
 class Board:
     # поле
     def __init__(self, width, height):
+        self.gameend = 0
         self.width = width
         self.height = height
         #         self.board = [[0] * width for _ in range(height)]      # для тестирования
@@ -237,7 +238,7 @@ class Board:
             if self.kush.pos == s.pos and self.kush.check_state():
                 s.collected = True
         if self.portal == self.kush.pos and self.kush.check_state():
-            print('you won :)')
+            self.gameend = 2
 
     def generate_pos(self):
         w = self.width
@@ -293,19 +294,22 @@ class Board:
         self.portal = self.generate_pos()   # все точки собраны, портал открылся
 
 
-if True:
-    pygame.init()
-    pygame.display.set_caption("Kushats")
-    size = width, height = 800, 800
-    screen = pygame.display.set_mode(size)
-    screen.blit(load_image('background0.png'), (0, 0))
+
+
+
+pygame.init()
+pygame.display.set_caption("Kushats")
+size = width, height = 800, 800
+screen = pygame.display.set_mode(size)
+screen.blit(load_image('background0.png'), (0, 0))
+clock = pygame.time.Clock()
+mainrunning = True
+while mainrunning:
     board = Board(14, 14)
-    clock = pygame.time.Clock()
-    running = True
-    while running:
+    while not board.gameend:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                mainrunning = False
             if event.type == pygame.KEYUP:  # стрелки
                 if 1073741903 <= event.key <= 1073741906:
                     board.kush.change_dir(event.key - 1073741903)
@@ -320,4 +324,19 @@ if True:
         board.check_collision()
         board.render(screen)
         pygame.display.flip()
-    pygame.quit()
+    pygame.time.wait(1000)
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                mainrunning = False
+                running = False
+            if event.type == pygame.KEYUP and event.key == 32:
+                running = False
+        screen.blit(load_image('background' + str(pygame.time.get_ticks() // 500 % 2) + '.png'), (0, 0))
+        if board.gameend == 1:
+            screen.blit(load_image('gameover.png'), (0, 0))
+        elif board.gameend == 2:
+            screen.blit(load_image('youwon.png'), (0, 0))
+        pygame.display.flip()
+pygame.quit()
