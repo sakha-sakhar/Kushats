@@ -28,7 +28,7 @@ def load_image(name, colorkey=None):
     return image
 
 
-def load_font(name):
+def load_font(name, size):
     found = True
     fullname = os.path.join('fonts', name)
     if not os.path.isfile(fullname):
@@ -42,7 +42,7 @@ def load_font(name):
                 found = True
                 break
     if found:
-        return pygame.font.Font(fullname, 32)
+        return pygame.font.Font(fullname, size)
     else:
         sys.exit()
 
@@ -152,6 +152,7 @@ class Ghost:
             for s in self.board.sweets:
                 if s.collected and not s.eaten:
                     s.eaten = True
+                    self.board.score -= 1000
                     survive = True
                     break
             if not survive:
@@ -229,7 +230,7 @@ class Board:
         self.top = 50
         self.cell_size = 50
         self.portal = False    # портала нет, пока не собраны все точки
-        self.font = load_font('18534.TTF')
+        self.font = load_font('18534.TTF', 32)
         self.portal_im = load_image('portal.png')
         self.kush = Entity([1, 12], self, 'kush')  # игрок
         self.sweets = []
@@ -251,24 +252,15 @@ class Board:
                                             (0, 2), (0, 1), (1, 1), (1, 0), (3, 0),
                                             (3, 3), (4, 3), (4, 2), (5, 2),
                                             (5, 0), (9, 0), (9, 2), (10, 2)], (255, 140, 0), name='mandarin')
+        self.score = 0
 
     def check_collision(self):
         for s in self.sweets:
-            if self.kush.pos == s.pos and self.kush.check_state():
+            if self.kush.pos == s.pos and self.kush.check_state() and not s.collected:
                 s.collected = True
+                self.score += 464
         if self.portal == self.kush.pos and self.kush.check_state():
             self.gameend = 2
-
-    def scoring_points(self):   # подсчёт очков
-        score = 0
-        for sweet in self.sweets:
-            if sweet.collected:
-                score += 464
-            if sweet.eaten:
-                score -= 1000
-        for line in self.board:
-            score += (line.count(2) * 12)
-        return score
 
     def generate_pos(self):
         w = self.width
@@ -287,6 +279,8 @@ class Board:
             x, y = self.kush.pos
             x = int(int(x) + (x - int(x)) // 0.5)
             y = int(int(y) + (y - int(y)) // 0.5)
+            if self.board[y][x] == 0:
+                self.score += 12
             self.board[y][x] = 2
         for i in range(self.width):
             for j in range(self.height):
@@ -311,9 +305,8 @@ class Board:
             screen.blit(self.portal_im, self.get_coords(self.portal))
         else:
             self.portal_necessity()
-        score = self.scoring_points()
-        score_text = self.font.render(f'Score: {score}', True, (255, 217, 82))
-        screen.blit(score_text, (555, 5))
+        score_text = self.font.render(f'Score: {self.score}', True, (255, 217, 82))
+        screen.blit(score_text, (530, 5))
 
     def get_coords(self, pos):  # преобразует позицию клетки в кординаты её левого верхнего угла
         x = pos[0] * self.cell_size + self.left
@@ -381,6 +374,8 @@ while mainrunning:
             screen.blit(load_image('gameover.png'), (0, 0))
         elif board.gameend == 2:
             screen.blit(load_image('youwon.png'), (0, 0))
+        score_text = load_font('18534.TTF', 64).render(f'Score: {board.score}', True, (255, 217, 82))
+        screen.blit(score_text, (400 - score_text.get_width() // 2, 333))
         screen.blit(load_image('newgame' + btnstate + '.png'), (0, 0))
         pygame.display.flip()
 pygame.quit()
