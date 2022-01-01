@@ -38,7 +38,6 @@ def load_font(name, size):
         for font in fonts:
             fullname = os.path.join('fonts', font)
             if os.path.isfile(fullname):
-                print(f'Найден файл со шрифтом {fullname}')
                 found = True
                 break
     if found:
@@ -232,7 +231,7 @@ class Board:
         self.portal_im = load_image('portal.png')
         self.kush = Entity([1, 12], self, 'kush')  # игрок
         self.sweets = []
-        for name in ['donut', 'cherry', 'candy cane']:
+        for name in ['donut', 'cherry', 'candycane']:
             sweet = Sweet(self, name)
             self.sweets.append(sweet)
         self.chaser = Chaser([12, 3], self)  # привидение которое движется к игроку
@@ -316,9 +315,6 @@ class Board:
             if not all([cell != 0 for cell in line]):
                 return False    # не все точки собраны
         self.portal = self.generate_pos()   # все точки собраны, портал открылся
-
-
-
 
 
 pygame.init()
