@@ -28,6 +28,25 @@ def load_image(name, colorkey=None):
     return image
 
 
+def load_font(name, size):
+    found = True
+    fullname = os.path.join('fonts', name)
+    if not os.path.isfile(fullname):
+        found = False
+        print(f'Файл со шрифтом {fullname} не найден')
+        fonts = ['18534.TTF', '18963.TTF', '18949.TTF', '18536.TTF']
+        for font in fonts:
+            fullname = os.path.join('fonts', font)
+            if os.path.isfile(fullname):
+                print(f'Найден файл со шрифтом {fullname}')
+                found = True
+                break
+    if found:
+        return pygame.font.Font(fullname, size)
+    else:
+        sys.exit()
+
+
 class Entity:  # сущность - думаю, можно или объединить в этом классе игрока и призраков, либо какие-то из них унаследовать от этого класса.
     def __init__(self, pos, board, name):
         self.board = board
@@ -133,10 +152,11 @@ class Ghost:
             for s in self.board.sweets:
                 if s.collected and not s.eaten:
                     s.eaten = True
+                    self.board.score -= 1000
                     survive = True
                     break
             if not survive:
-                print('you dead :(')
+                self.board.gameend = 1
 
 
     def check_state(self):
@@ -181,13 +201,12 @@ class Sweet:
         self.im = load_image(self.name + '.png')
         self.collected = False  # собрано
         self.eaten = False  # съедено привидением
-        self.collected_coord = 325, 745
-
 
 
 class Board:
     # поле
     def __init__(self, width, height):
+        self.gameend = 0
         self.width = width
         self.height = height
         #         self.board = [[0] * width for _ in range(height)]      # для тестирования
@@ -209,7 +228,8 @@ class Board:
         self.left = 50
         self.top = 50
         self.cell_size = 50
-        self.portal = False
+        self.portal = False    # портала нет, пока не собраны все точки
+        self.font = load_font('18534.TTF', 32)
         self.portal_im = load_image('portal.png')
         self.kush = Entity([1, 12], self, 'kush')  # игрок
         self.sweets = []
@@ -231,18 +251,20 @@ class Board:
                                             (0, 2), (0, 1), (1, 1), (1, 0), (3, 0),
                                             (3, 3), (4, 3), (4, 2), (5, 2),
                                             (5, 0), (9, 0), (9, 2), (10, 2)], (255, 140, 0), name='mandarin')
+        self.score = 0
 
     def check_collision(self):
         for s in self.sweets:
-            if self.kush.pos == s.pos and self.kush.check_state():
+            if self.kush.pos == s.pos and self.kush.check_state() and not s.collected:
                 s.collected = True
+                self.score += 464
         if self.portal == self.kush.pos and self.kush.check_state():
-            print('you won :)')
+            self.gameend = 2
 
     def generate_pos(self):
         w = self.width
         h = self.height
-        n = randint(0, w * h)
+        n = randint(0, w * h - 1)
         pos = n % h, n // h
         poses = [s.pos for s in self.sweets]
         poses.append(self.kush.pos)
@@ -256,6 +278,8 @@ class Board:
             x, y = self.kush.pos
             x = int(int(x) + (x - int(x)) // 0.5)
             y = int(int(y) + (y - int(y)) // 0.5)
+            if self.board[y][x] == 0:
+                self.score += 12
             self.board[y][x] = 2
         for i in range(self.width):
             for j in range(self.height):
@@ -270,9 +294,9 @@ class Board:
         screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
         for i, s in enumerate(self.sweets):
             if not s.eaten:
+                y = 755
                 if s.collected:
-                    x, y = s.collected_coord
-                    x += 50 * i
+                    x = 335 + 46 * i
                 else:
                     x, y = self.get_coords(s.pos)
                 screen.blit(s.im, (x, y))
@@ -280,6 +304,8 @@ class Board:
             screen.blit(self.portal_im, self.get_coords(self.portal))
         else:
             self.portal_necessity()
+        score_text = self.font.render(f'Score: {self.score}', True, (255, 217, 82))
+        screen.blit(score_text, (530, 5))
 
     def get_coords(self, pos):  # преобразует позицию клетки в кординаты её левого верхнего угла
         x = pos[0] * self.cell_size + self.left
@@ -293,19 +319,22 @@ class Board:
         self.portal = self.generate_pos()   # все точки собраны, портал открылся
 
 
-if True:
-    pygame.init()
-    pygame.display.set_caption("Kushats")
-    size = width, height = 800, 800
-    screen = pygame.display.set_mode(size)
-    screen.blit(load_image('background0.png'), (0, 0))
+
+
+
+pygame.init()
+pygame.display.set_caption("Kushats")
+size = width, height = 800, 800
+screen = pygame.display.set_mode(size)
+screen.blit(load_image('background0.png'), (0, 0))
+clock = pygame.time.Clock()
+mainrunning = True
+while mainrunning:
     board = Board(14, 14)
-    clock = pygame.time.Clock()
-    running = True
-    while running:
+    while not board.gameend:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                pygame.quit()
             if event.type == pygame.KEYUP:  # стрелки
                 if 1073741903 <= event.key <= 1073741906:
                     board.kush.change_dir(event.key - 1073741903)
@@ -320,4 +349,32 @@ if True:
         board.check_collision()
         board.render(screen)
         pygame.display.flip()
-    pygame.quit()
+    pygame.time.wait(1000)
+    running = True
+    while running:
+        x, y = pygame.mouse.get_pos()
+        if 250 < x < 550 and 400 < y < 500:
+            btnstate = 'selected'
+        else:
+            btnstate = 'base'
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                mainrunning = False
+                running = False
+            elif event.type == pygame.KEYUP and event.key == 32:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN and 250 < event.pos[0] < 550 and 400 < event.pos[1] < 500:
+                btnstate = 'pressed'
+            elif event.type == pygame.MOUSEBUTTONUP and 250 < event.pos[0] < 550 and 400 < event.pos[1] < 500:
+                running = False
+                btnstate = 'base'
+        screen.blit(load_image('background' + str(pygame.time.get_ticks() // 500 % 2) + '.png'), (0, 0))
+        if board.gameend == 1:
+            screen.blit(load_image('gameover.png'), (0, 0))
+        elif board.gameend == 2:
+            screen.blit(load_image('youwon.png'), (0, 0))
+        score_text = load_font('18534.TTF', 64).render(f'Score: {board.score}', True, (255, 217, 82))
+        screen.blit(score_text, (400 - score_text.get_width() // 2, 333))
+        screen.blit(load_image('newgame' + btnstate + '.png'), (0, 0))
+        pygame.display.flip()
+pygame.quit()
