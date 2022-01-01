@@ -309,7 +309,7 @@ while mainrunning:
     while not board.gameend:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                mainrunning = False
+                pygame.quit()
             if event.type == pygame.KEYUP:  # стрелки
                 if 1073741903 <= event.key <= 1073741906:
                     board.kush.change_dir(event.key - 1073741903)
@@ -327,16 +327,27 @@ while mainrunning:
     pygame.time.wait(1000)
     running = True
     while running:
+        x, y = pygame.mouse.get_pos()
+        if 250 < x < 550 and 400 < y < 500:
+            btnstate = 'selected'
+        else:
+            btnstate = 'base'
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 mainrunning = False
                 running = False
-            if event.type == pygame.KEYUP and event.key == 32:
+            elif event.type == pygame.KEYUP and event.key == 32:
                 running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN and 250 < event.pos[0] < 550 and 400 < event.pos[1] < 500:
+                btnstate = 'pressed'
+            elif event.type == pygame.MOUSEBUTTONUP and 250 < event.pos[0] < 550 and 400 < event.pos[1] < 500:
+                running = False
+                btnstate = 'base'
         screen.blit(load_image('background' + str(pygame.time.get_ticks() // 500 % 2) + '.png'), (0, 0))
         if board.gameend == 1:
             screen.blit(load_image('gameover.png'), (0, 0))
         elif board.gameend == 2:
             screen.blit(load_image('youwon.png'), (0, 0))
+        screen.blit(load_image('newgame' + btnstate + '.png'), (0, 0))
         pygame.display.flip()
 pygame.quit()
