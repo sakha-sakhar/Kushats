@@ -45,6 +45,14 @@ def load_font(name, size):
     else:
         sys.exit()
 
+class Animated:
+    def __init__(self, images, delay):
+        self.images = [load_image(image) for image in images]
+        self.delay = delay
+
+    def get_image(self):
+        return self.images[pygame.time.get_ticks() // self.delay % len(self.images)]
+
 
 class Entity:  # сущность - думаю, можно или объединить в этом классе игрока и призраков, либо какие-то из них унаследовать от этого класса.
     def __init__(self, pos, board, name):
@@ -346,7 +354,8 @@ pygame.display.set_caption("Kushats")
 size = width, height = 800, 800
 screen = pygame.display.set_mode(size)
 pygame.display.set_icon(load_image('icon.png'))
-screen.blit(load_image('background0.png'), (0, 0))
+bg = Animated(['background0.png', 'background2.png', 'background1.png', 'background2.png'], 250)
+mainmenu = load_image('mainmenu.png')
 clock = pygame.time.Clock()
 running = True
 mainrunning = True
@@ -373,7 +382,7 @@ while running:
             elif quit.check_mouse(mouse):
                 running = False
                 mainrunning = False
-    screen.blit(load_image('mainmenu.png'), (0, 0))
+    screen.blit(mainmenu, (0, 0))
     screen.blit(newgame.current, newgame.coords)
     screen.blit(quit.current, quit.coords)
     pygame.display.flip()
@@ -393,14 +402,14 @@ while mainrunning:
                 else:
                     print(event.key)
         clock.tick(50)
-        screen.blit(load_image('background' + str(pygame.time.get_ticks() // 500 % 2) + '.png'), (0, 0))
+        screen.blit(bg.get_image(), (0, 0))
         board.kush.change_coords()
         for ghost in board.ghosts:
             ghost.move()
         board.check_collision()
         board.render(screen)
         pygame.display.flip()
-    pygame.time.wait(1500)
+    pygame.time.wait(1850)
     running = True
     pygame.mixer.music.load('sounds/menu.mp3')
     pygame.mixer.music.play(-1, 5000, 1000)
@@ -418,7 +427,7 @@ while mainrunning:
             elif event.type == pygame.MOUSEBUTTONUP:
                 if newgame.check_mouse(mouse):
                     running = False
-        screen.blit(load_image('background' + str(pygame.time.get_ticks() // 500 % 2) + '.png'), (0, 0))
+        screen.blit(bg.get_image(), (0, 0))
         if board.gameend == 1:
             screen.blit(load_image('gameover.png'), (0, 0))
         elif board.gameend == 2:
