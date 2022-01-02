@@ -272,7 +272,7 @@ class Board:
         n = randint(0, w * h - 1)
         pos = n % h, n // h
         poses = [s.pos for s in self.sweets]
-        poses.append(self.kush.pos)
+        poses.append((self.kush.pos[0], self.kush.pos[1]))
         while pos in poses or self.board[pos[1]][pos[0]] == 1:
             n = randint(0, w * h)
             pos = n % h, n // h
