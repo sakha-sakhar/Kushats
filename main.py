@@ -458,6 +458,10 @@ while mainrunning:
     running = True
     pygame.mixer.music.load('sounds/menu.mp3')
     pygame.mixer.music.play(-1, 5000, 1000)
+    if board.gameend == 1:
+        table = load_image('gameover.png')
+    elif board.gameend == 2:
+        table = load_image('youwon.png')
     while running:
         mouse = pygame.mouse.get_pos()
         newgame.check_selected(mouse)
@@ -473,10 +477,7 @@ while mainrunning:
                 if newgame.check_mouse(mouse):
                     running = False
         screen.blit(bg.get_image(), (0, 0))
-        if board.gameend == 1:
-            screen.blit(load_image('gameover.png'), (0, 0))
-        elif board.gameend == 2:
-            screen.blit(load_image('youwon.png'), (0, 0))
+        screen.blit(table, (0, 0))
         score_text = load_font('18534.TTF', 64).render(f'Score: {board.score}', True, (255, 217, 82))
         screen.blit(score_text, (400 - score_text.get_width() // 2, 333))
         screen.blit(newgame.current, newgame.coords)
