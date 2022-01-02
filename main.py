@@ -10,6 +10,8 @@ directions = {0: ((1, 0), 'right'),  # вправо
               3: ((0, -1), 'up'),  # вверх
               -1: ((0, 0), 'stop')}   # стоп
 
+volume = 1
+
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('images', name)
@@ -249,8 +251,10 @@ class Board:
         self.sweet_sound = pygame.mixer.Sound('sounds/sweet collected.mp3')
         self.won_sound = pygame.mixer.Sound('sounds/won.mp3')
         self.points_sound = pygame.mixer.Sound('sounds/eating points.mp3')
-        self.points_sound.set_volume(0.5)
         self.points_sound_timer = -1000
+        self.points_sound.set_volume(0.5 * volume)
+        for sound in [self.ghost_sound, self.sweet_sound, self.won_sound]:
+            sound.set_volume(volume)
 
     def check_collision(self):
         for s in self.sweets:
@@ -349,6 +353,31 @@ class Button:
         else:
             self.current = self.base
 
+
+class SoundWidget(Button):
+    def __init__(self):
+        self.coords = (0, 530)
+        self.size = (70, 270)
+        self.mainpics = [load_image(image) for image in ['sound0.png', 'sound1.png',
+                                                         'sound2.png', 'sound3.png', 'soundoff.png']]
+        self.slider0 = load_image('slider.png')
+        self.slider1 = load_image('slider1.png')
+
+    def get_main_image(self):
+        if volume == 0:
+            return self.mainpics[4]
+        return self.mainpics[int(volume // 0.26)]
+
+    def slider_coords(self):
+        return (16, int(547 + (1 - volume) * 171))
+
+    def slider_check(self, mouse):
+        coords = self.slider_coords()
+        if coords[0] < mouse[0] < coords[0] + self.slider1.get_width() and \
+                coords[1] < mouse[1] < coords[1] + self.slider1.get_height():
+            return True
+        return False
+
 pygame.init()
 pygame.display.set_caption("Kushats")
 size = width, height = 800, 800
@@ -363,7 +392,10 @@ pygame.mixer.music.load('sounds/menu.mp3')
 pygame.mixer.music.play(-1, 5000, 1000)
 newgame = Button((256, 401), 'newgame')
 quit = Button((256, 507), 'quit')
+sound = SoundWidget()
+slider_grabbed = False
 while running:
+    pygame.mixer.music.set_volume(volume)
     mouse = pygame.mouse.get_pos()
     newgame.check_selected(mouse)
     quit.check_selected(mouse)
@@ -376,15 +408,28 @@ while running:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             newgame.check_pressed(mouse)
             quit.check_pressed(mouse)
+            if sound.slider_check(mouse):
+                slider_grabbed = True
         elif event.type == pygame.MOUSEBUTTONUP:
             if newgame.check_mouse(mouse):
                 running = False
             elif quit.check_mouse(mouse):
                 running = False
                 mainrunning = False
+            slider_grabbed = False
     screen.blit(mainmenu, (0, 0))
     screen.blit(newgame.current, newgame.coords)
     screen.blit(quit.current, quit.coords)
+    screen.blit(sound.get_main_image(), (0, 700))
+    if sound.check_mouse(mouse) or slider_grabbed:
+        screen.blit(sound.slider0, (27, 547))
+        screen.blit(sound.slider1, sound.slider_coords())
+    if slider_grabbed:
+        volume = 1 - (mouse[1] - 547) / 171
+        if volume > 1:
+            volume = 1
+        elif volume < 0:
+            volume = 0
     pygame.display.flip()
 
 while mainrunning:
