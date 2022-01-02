@@ -313,6 +313,34 @@ class Board:
         self.portal = self.generate_pos()   # все точки собраны, портал открылся
 
 
+class Button:
+    def __init__(self, coords, name):
+        self.coords = coords
+        self.name = name
+        self.base = load_image(name + 'base.png')
+        self.selected = load_image(name + 'selected.png')
+        self.pressed = load_image(name + 'pressed.png')
+        self.current = self.base
+        self.size = self.base.get_size()
+
+    def check_mouse(self, mouse):
+        if self.coords[0] < mouse[0] < self.coords[0] + self.size[0] and \
+                self.coords[1] < mouse[1] < self.coords[1] + self.size[1]:
+            return True
+        return False
+
+    def check_selected(self, mouse):
+        if self.check_mouse(mouse):
+            self.current = self.selected
+        else:
+            self.current = self.base
+
+    def check_pressed(self, mouse):
+        if self.check_mouse(mouse):
+            self.current = self.pressed
+        else:
+            self.current = self.base
+
 pygame.init()
 pygame.display.set_caption("Kushats")
 size = width, height = 800, 800
@@ -324,14 +352,12 @@ running = True
 mainrunning = True
 pygame.mixer.music.load('sounds/menu.mp3')
 pygame.mixer.music.play(-1, 5000, 1000)
+newgame = Button((256, 401), 'newgame')
+quit = Button((256, 507), 'quit')
 while running:
-    x, y = pygame.mouse.get_pos()
-    ngstate = 'base'
-    qstate = 'base'
-    if 250 < x < 550 and 400 < y < 500:
-        ngstate = 'selected'
-    elif 250 < x < 550 and 500 < y < 610:
-        qstate = 'selected'
+    mouse = pygame.mouse.get_pos()
+    newgame.check_selected(mouse)
+    quit.check_selected(mouse)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             mainrunning = False
@@ -339,20 +365,19 @@ while running:
         elif event.type == pygame.KEYUP and event.key == 32:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            if 250 < x < 550 and 400 < y < 500:
-                ngstate = 'pressed'
-            elif 250 < x < 550 and 500 < y < 610:
-                qstate = 'pressed'
+            newgame.check_pressed(mouse)
+            quit.check_pressed(mouse)
         elif event.type == pygame.MOUSEBUTTONUP:
-            if 250 < x < 550 and 500 < y < 610:
+            if newgame.check_mouse(mouse):
+                running = False
+            elif quit.check_mouse(mouse):
                 running = False
                 mainrunning = False
-            elif 250 < x < 550 and 400 < y < 500:
-                running = False
     screen.blit(load_image('mainmenu.png'), (0, 0))
-    screen.blit(load_image('newgame' + ngstate + '.png'), (0, 0))
-    screen.blit(load_image('quit' + qstate + '.png'), (0, 0))
+    screen.blit(newgame.current, newgame.coords)
+    screen.blit(quit.current, quit.coords)
     pygame.display.flip()
+
 while mainrunning:
     pygame.mixer.music.unload()
     pygame.mixer.music.load('sounds/start.mp3')
@@ -380,22 +405,19 @@ while mainrunning:
     pygame.mixer.music.load('sounds/menu.mp3')
     pygame.mixer.music.play(-1, 5000, 1000)
     while running:
-        x, y = pygame.mouse.get_pos()
-        if 250 < x < 550 and 400 < y < 500:
-            btnstate = 'selected'
-        else:
-            btnstate = 'base'
+        mouse = pygame.mouse.get_pos()
+        newgame.check_selected(mouse)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 mainrunning = False
                 running = False
             elif event.type == pygame.KEYUP and event.key == 32:
                 running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN and 250 < event.pos[0] < 550 and 400 < event.pos[1] < 500:
-                btnstate = 'pressed'
-            elif event.type == pygame.MOUSEBUTTONUP and 250 < event.pos[0] < 550 and 400 < event.pos[1] < 500:
-                running = False
-                btnstate = 'base'
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                newgame.check_pressed(mouse)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if newgame.check_mouse(mouse):
+                    running = False
         screen.blit(load_image('background' + str(pygame.time.get_ticks() // 500 % 2) + '.png'), (0, 0))
         if board.gameend == 1:
             screen.blit(load_image('gameover.png'), (0, 0))
@@ -403,6 +425,6 @@ while mainrunning:
             screen.blit(load_image('youwon.png'), (0, 0))
         score_text = load_font('18534.TTF', 64).render(f'Score: {board.score}', True, (255, 217, 82))
         screen.blit(score_text, (400 - score_text.get_width() // 2, 333))
-        screen.blit(load_image('newgame' + btnstate + '.png'), (0, 0))
+        screen.blit(newgame.current, newgame.coords)
         pygame.display.flip()
 pygame.quit()
