@@ -106,9 +106,8 @@ class Entity:  # сущность - думаю, можно или объедин
         return pygame.time.get_ticks() - self.timer > 5000
 
 
-class Ghost:
-    def __init__(self, pos, board, trajectory, color, name=None):
-        self.color = color
+class Ghost(Entity):
+    def __init__(self, pos, board, trajectory, name=None):
         self.name = name
         self.trajectory = trajectory
         self.board = board
@@ -135,9 +134,6 @@ class Ghost:
         y1 = round(self.pos[1] + y * self.speed, 1)
         self.pos = x1, y1
 
-    def get_image(self):
-        return Entity.get_image(self)
-
     def check_kush(self):
         # если кушац пересекается с призраком, то оба входят в режим таймаута - меняют спрайт
         # при этом кушац не может есть точки, а призраки не двигаются
@@ -158,17 +154,8 @@ class Ghost:
             if not survive:
                 self.board.gameend = 1
 
-    def check_state(self):
-        return pygame.time.get_ticks() - self.timer > 5000
 
-
-class Chaser(Entity, Ghost):
-    def __init__(self, board, pos):
-        super().__init__(board, pos, 'chaser')
-        self.color = (225, 0, 255)
-        self.speed = 0.1
-        self.timer = -5000
-
+class Chaser(Ghost):
     def change_dir(self, dir_x, dir_y):
         if self.can_move(dir_x) and dir_x != (0, 0):
             self.dir2 = dir_x
@@ -177,7 +164,7 @@ class Chaser(Entity, Ghost):
         else:
             self.dir2 = (0, 0)
 
-    def change_coords(self):
+    def move(self):
         if not self.check_state():
             return
             # чейзер, как и остальные призраки, не двигается в таймауте
@@ -187,9 +174,6 @@ class Chaser(Entity, Ghost):
         dir_y = (0, abs(deltay) / deltay if deltay != 0 else 0)
         self.change_dir(dir_x, dir_y)
         super().change_coords()
-
-    def check_kush(self):
-        Ghost.check_kush(self)
 
 
 class Sweet:
@@ -236,21 +220,22 @@ class Board:
         for name in ['donut', 'cherry', 'candycane']:
             sweet = Sweet(self, name)
             self.sweets.append(sweet)
-        self.chaser = Chaser([12, 3], self)  # привидение которое движется к игроку
-        self.cloudy = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
-                                           (5, 11), (5, 13), (3, 13), (3, 11),
-                                           (6, 11), (6, 12), (7, 12), (7, 13),
-                                           (9, 13), (9, 9), (13, 9),
-                                           (13, 12), (12, 12), (12, 13), (10, 13),
-                                           (10, 12), (9, 12), (9, 10), (6, 10),
-                                           (6, 11), (4, 11), (4, 9), (3, 9),
-                                           (3, 2), (1, 2), (1, 0)], (205, 92, 92), name='cloudy')
-        self.mandarin = Ghost((10, 2), self, [(10, 0), (12, 0), (12, 1), (13, 1),
-                                            (13, 3), (6, 3), (9, 3), (9, 0),
-                                            (7, 0), (7, 1), (5, 1), (5, 2),
-                                            (0, 2), (0, 1), (1, 1), (1, 0), (3, 0),
-                                            (3, 3), (4, 3), (4, 2), (5, 2),
-                                            (5, 0), (9, 0), (9, 2), (10, 2)], (255, 140, 0), name='mandarin')
+        chaser = Chaser([12, 3], self, None, name='chaser')  # привидение которое движется к игроку
+        cloudy = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
+                                        (5, 11), (5, 13), (3, 13), (3, 11),
+                                        (6, 11), (6, 12), (7, 12), (7, 13),
+                                        (9, 13), (9, 9), (13, 9),
+                                        (13, 12), (12, 12), (12, 13), (10, 13),
+                                        (10, 12), (9, 12), (9, 10), (6, 10),
+                                        (6, 11), (4, 11), (4, 9), (3, 9),
+                                        (3, 2), (1, 2), (1, 0)], name='cloudy')
+        mandarin = Ghost((10, 2), self, [(10, 0), (12, 0), (12, 1), (13, 1),
+                                        (13, 3), (6, 3), (9, 3), (9, 0),
+                                        (7, 0), (7, 1), (5, 1), (5, 2),
+                                        (0, 2), (0, 1), (1, 1), (1, 0), (3, 0),
+                                        (3, 3), (4, 3), (4, 2), (5, 2),
+                                        (5, 0), (9, 0), (9, 2), (10, 2)], name='mandarin')
+        self.ghosts = [chaser, cloudy, mandarin]
         self.score = 0
         self.ghost_sound = pygame.mixer.Sound('sounds/ghost attack.mp3')
         self.sweet_sound = pygame.mixer.Sound('sounds/sweet collected.mp3')
@@ -299,10 +284,10 @@ class Board:
                 if cell == 0:  # точки
                     screen.fill((255, 255, 0), rect=(rct[0] + self.cell_size // 2 - 5,
                                                      rct[1] + self.cell_size // 2 - 5, 10, 10))
-        for character in (self.kush, self.cloudy, self.chaser, self.mandarin):
+        #for character in (self.kush, self.cloudy, self.chaser, self.mandarin):
+        for character in (self.kush, *self.ghosts):
             screen.blit(character.get_image(), (self.get_coords(character.pos)))
             character.check_kush()
-        screen.blit(self.kush.get_image(), (self.get_coords(self.kush.pos)))
         for i, s in enumerate(self.sweets):
             if not s.eaten:
                 if s.collected:
@@ -385,9 +370,8 @@ while mainrunning:
         clock.tick(50)
         screen.blit(load_image('background' + str(pygame.time.get_ticks() // 500 % 2) + '.png'), (0, 0))
         board.kush.change_coords()
-        board.chaser.change_coords()
-        board.cloudy.move()
-        board.mandarin.move()
+        for ghost in board.ghosts:
+            ghost.move()
         board.check_collision()
         board.render(screen)
         pygame.display.flip()
