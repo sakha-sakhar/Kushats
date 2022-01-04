@@ -47,6 +47,7 @@ def load_font(name, size):
     else:
         sys.exit()
 
+
 class Animated:
     def __init__(self, images, delay):
         self.images = [load_image(image) for image in images]
@@ -378,6 +379,7 @@ class SoundWidget(Button):
             return True
         return False
 
+
 pygame.init()
 pygame.display.set_caption("Kushats")
 size = width, height = 800, 800
@@ -391,46 +393,106 @@ mainrunning = True
 pygame.mixer.music.load('sounds/menu.mp3')
 pygame.mixer.music.play(-1, 5000, 1000)
 newgame = Button((256, 401), 'newgame')
-quit = Button((256, 507), 'quit')
+quit = Button((256, 613), 'quit')
+results = Button((256, 507), 'results')
 sound = SoundWidget()
 slider_grabbed = False
-while running:
-    pygame.mixer.music.set_volume(volume)
-    mouse = pygame.mouse.get_pos()
-    newgame.check_selected(mouse)
-    quit.check_selected(mouse)
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            mainrunning = False
-            running = False
-        elif event.type == pygame.KEYUP and event.key == 32:
-            running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            newgame.check_pressed(mouse)
-            quit.check_pressed(mouse)
-            if sound.slider_check(mouse):
-                slider_grabbed = True
-        elif event.type == pygame.MOUSEBUTTONUP:
-            if newgame.check_mouse(mouse):
-                running = False
-            elif quit.check_mouse(mouse):
-                running = False
+not_results = False
+while not not_results:
+    while running:
+        pygame.mixer.music.set_volume(volume)
+        mouse = pygame.mouse.get_pos()
+        newgame.check_selected(mouse)
+        quit.check_selected(mouse)
+        results.check_selected(mouse)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
                 mainrunning = False
-            slider_grabbed = False
-    screen.blit(mainmenu, (0, 0))
-    screen.blit(newgame.current, newgame.coords)
-    screen.blit(quit.current, quit.coords)
-    screen.blit(sound.get_main_image(), (0, 700))
-    if sound.check_mouse(mouse) or slider_grabbed:
-        screen.blit(sound.slider0, (27, 547))
-        screen.blit(sound.slider1, sound.slider_coords())
-    if slider_grabbed:
-        volume = 1 - (mouse[1] - 547) / 171
-        if volume > 1:
-            volume = 1
-        elif volume < 0:
-            volume = 0
-    pygame.display.flip()
+                running = False
+            elif event.type == pygame.KEYUP and event.key == 32:
+                running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                newgame.check_pressed(mouse)
+                quit.check_pressed(mouse)
+                results.check_pressed(mouse)
+                if sound.slider_check(mouse):
+                    slider_grabbed = True
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if newgame.check_mouse(mouse):
+                    running = False
+                    not_results = True
+                elif quit.check_mouse(mouse):
+                    running = False
+                    mainrunning = False
+                    not_results = True
+                elif results.check_mouse(mouse):
+                    running = False
+                slider_grabbed = False
+        screen.blit(mainmenu, (0, 0))
+        screen.blit(newgame.current, newgame.coords)
+        screen.blit(quit.current, quit.coords)
+        screen.blit(results.current, results.coords)
+        screen.blit(sound.get_main_image(), (0, 700))
+        if sound.check_mouse(mouse) or slider_grabbed:
+            screen.blit(sound.slider0, (27, 547))
+            screen.blit(sound.slider1, sound.slider_coords())
+        if slider_grabbed:
+            volume = 1 - (mouse[1] - 547) / 171
+            if volume > 1:
+                volume = 1
+            elif volume < 0:
+                volume = 0
+        pygame.display.flip()
+    if not_results:
+        break
+    back = False
+    res_bg = Animated(['res_background0.png', 'res_background2.png',
+                       'res_background1.png', 'res_background2.png'], 250)
+    f = open('results.txt', 'r')
+    res = list(map(lambda x: (x.split()[0], int(x.split()[1])), f.readlines()))
+    f.close()
+    positive = max(res, key=lambda x: x[1])[1]
+    if positive <= 0:
+        positive = '-'
+    negative = min(res, key=lambda x: x[1])[1]
+    if negative >= 0:
+        negative = '-'
+    all_results_text = []
+    font38 = load_font('18534.TTF', 38)
+    for i, r in enumerate(res):
+        if r[0] == '1':
+            status = 'fail'
+        else:
+            status = 'win'
+        text0 = font38.render(f'{i + 1}', True, (255, 217, 82))
+        text1 = font38.render(str(r[1]), True, (255, 217, 82))
+        text2 = font38.render(status, True, (255, 217, 82))
+        all_results_text.append((text0, text1, text2))
+    positive_text = load_font('18534.TTF', 48).render(str(positive), True, (255, 217, 82))
+    negative_text = load_font('18534.TTF', 48).render(str(negative), True, (255, 217, 82))
+    score_txt = font38.render('Score', True, (255, 217, 82))
+    total_txt = font38.render('Total', True, (255, 217, 82))
+    while not back:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                mainrunning = False
+                not_results = True
+                back = True
+        screen.blit(res_bg.get_image(), (0, 0))
+        for i in range(len(all_results_text)):
+            x = i // (len(all_results_text) // 2) * 390
+            y = 345 + i % (len(all_results_text) // 2) * 27
+            screen.blit(all_results_text[i][0], (x + 70, y))
+            screen.blit(all_results_text[i][1], (x + 130, y))
+            screen.blit(all_results_text[i][2], (x + 270, y))
+
+        screen.blit(total_txt, (260, 305))
+        screen.blit(total_txt, (640, 305))
+        screen.blit(score_txt, (120, 305))
+        screen.blit(score_txt, (500, 305))
+        screen.blit(positive_text, (454, 167))
+        screen.blit(negative_text, (454, 225))
+        pygame.display.flip()
 
 while mainrunning:
     pygame.mixer.music.unload()
@@ -462,6 +524,9 @@ while mainrunning:
         table = load_image('gameover.png')
     elif board.gameend == 2:
         table = load_image('youwon.png')
+    f = open('results.txt', 'a')
+    f.write(f'{board.gameend} {board.score}' + '\n')
+    f.close()
     while running:
         mouse = pygame.mouse.get_pos()
         newgame.check_selected(mouse)
