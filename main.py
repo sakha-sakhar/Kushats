@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+import sqlite3
 from math import ceil, floor
 from random import randint
 
@@ -380,6 +381,16 @@ class SoundWidget(Button):
         return False
 
 
+def get_results():
+    res = cur.execute("""SELECT * FROM results""").fetchall()
+    if len(res) > 28:
+        for i in range(len(res))[:-28]:
+            cur.execute("""DELETE FROM results WHERE id = ?""", (res[i][2],))
+            con.commit()
+        res = res[28:]
+    return res
+
+
 pygame.init()
 pygame.display.set_caption("Kushats")
 size = width, height = 800, 800
@@ -398,6 +409,8 @@ results = Button((256, 507), 'results')
 sound = SoundWidget()
 slider_grabbed = False
 not_results = False
+con = sqlite3.connect('results.db')
+cur = con.cursor()
 while not not_results:
     while running:
         pygame.mixer.music.set_volume(volume)
@@ -449,9 +462,7 @@ while not not_results:
     back = False
     res_bg = Animated(['res_background0.png', 'res_background2.png',
                        'res_background1.png', 'res_background2.png'], 250)
-    f = open('results.txt', 'r')
-    res = list(map(lambda x: (x.split()[0], int(x.split()[1])), f.readlines()))
-    f.close()
+    res = get_results()
     if len(res) != 0:
         positive = max(res, key=lambda x: x[1])[1]
         if positive <= 0:
@@ -465,7 +476,8 @@ while not not_results:
     all_results_text = []
     font38 = load_font('18534.TTF', 38)
     for i, r in enumerate(res):
-        if r[0] == '1':
+        print(r[0])
+        if r[0] == 1:
             status = 'fail'
         else:
             status = 'win'
@@ -541,15 +553,11 @@ while mainrunning:
         table = load_image('gameover.png')
     elif board.gameend == 2:
         table = load_image('youwon.png')
-    f = open('results.txt', 'r')
-    data = f.readlines()
-    data.append(f'{board.gameend} {board.score}' + '\n')
-    if len(data) > 28:
-        data = data[-27:]
-    f.close()
-    f = open('results.txt', 'w')
-    f.write(''.join(data))
-    f.close()
+    cur.execute("""INSERT INTO results(total, score) VALUES(?, ?)""",
+                (board.gameend, board.score))
+    con.commit()
+    get_results()
+
     while running:
         mouse = pygame.mouse.get_pos()
         newgame.check_selected(mouse)
@@ -571,3 +579,4 @@ while mainrunning:
         screen.blit(newgame.current, newgame.coords)
         pygame.display.flip()
 pygame.quit()
+con.close()
