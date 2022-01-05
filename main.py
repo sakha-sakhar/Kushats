@@ -475,8 +475,8 @@ while not not_results:
         negative = '-'
     all_results_text = []
     font38 = load_font('18534.TTF', 38)
+    font48 = load_font('18534.TTF', 48)
     for i, r in enumerate(res):
-        print(r[0])
         if r[0] == 1:
             status = 'fail'
         else:
@@ -485,15 +485,17 @@ while not not_results:
         text1 = font38.render(str(r[1]), True, (255, 217, 82))
         text2 = font38.render(status, True, (255, 217, 82))
         all_results_text.append((text0, text1, text2))
-    positive_text = load_font('18534.TTF', 48).render(str(positive), True, (255, 217, 82))
-    negative_text = load_font('18534.TTF', 48).render(str(negative), True, (255, 217, 82))
+    positive_text = font48.render(str(positive), True, (255, 217, 82))
+    negative_text = font48.render(str(negative), True, (255, 217, 82))
     score_txt = font38.render('Score', True, (255, 217, 82))
     total_txt = font38.render('Total', True, (255, 217, 82))
-    back_btn = Button((80, 80), 'back')
+    back_btn = Button((63, 63), 'back')
+    del_btn = Button((637, 63), 'del')
     while not back:
         pygame.mixer.music.set_volume(volume)
         mouse = pygame.mouse.get_pos()
         back_btn.check_selected(mouse)
+        del_btn.check_selected(mouse)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 mainrunning = False
@@ -501,10 +503,17 @@ while not not_results:
                 back = True
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 back_btn.check_pressed(mouse)
+                del_btn.check_pressed(mouse)
             elif event.type == pygame.MOUSEBUTTONUP:
                 if back_btn.check_mouse(mouse):
                     back = True
                     running = True
+                elif del_btn.check_mouse(mouse):
+                    cur.execute("""DELETE FROM results""")
+                    con.commit()
+                    all_results_text = []
+                    positive_text = font48.render('-', True, (255, 217, 82))
+                    negative_text = font48.render('-', True, (255, 217, 82))
         screen.blit(res_bg.get_image(), (0, 0))
         for i in range(len(all_results_text)):
             x = i // ceil(len(all_results_text) / 2) * 390
@@ -515,6 +524,7 @@ while not not_results:
             screen.blit(all_results_text[i][1], (x + 220 - w_score, y))
             screen.blit(all_results_text[i][2], (x + 270, y))
         screen.blit(back_btn.current, back_btn.coords)
+        screen.blit(del_btn.current, del_btn.coords)
         screen.blit(total_txt, (260, 305))
         screen.blit(total_txt, (650, 305))
         screen.blit(score_txt, (120, 305))
