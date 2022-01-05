@@ -473,22 +473,16 @@ while not not_results:
         break
     back = False
     res = get_results()
+    positive = '-'
+    negative = '-'
     if len(res) != 0:
-        positive = max(res, key=lambda x: x[1])[1]
-        if positive <= 0:
-            positive = '-'
-        negative = min(res, key=lambda x: x[1])[1]
-        if negative >= 0:
-            negative = '-'
-    else:
-        positive = '-'
-        negative = '-'
+        if positive > 0:
+            positive = max(res, key=lambda x: x[1])[1]
+        if negative < 0:
+            negative = min(res, key=lambda x: x[1])[1]
     all_results_text = []
     for i, r in enumerate(res):
-        if r[0] == 1:
-            status = 'fail'
-        else:
-            status = 'win'
+        status = 'fail' if r[0] == 1 else 'win'
         text0 = font38.render(f'{i + 1}', True, (255, 217, 82))
         text1 = font38.render(str(r[1]), True, (255, 217, 82))
         text2 = font38.render(status, True, (255, 217, 82))
