@@ -11,7 +11,7 @@ directions = {0: ((1, 0), 'right'),  # вправо
               3: ((0, -1), 'up'),  # вверх
               -1: ((0, 0), 'stop')}   # стоп
 
-volume = 1
+volume = 1  # громкость музыки
 
 
 def load_image(name, colorkey=None):
@@ -58,14 +58,14 @@ class Animated:
         return self.images[pygame.time.get_ticks() // self.delay % len(self.images)]
 
 
-class Entity:  # сущность - думаю, можно или объединить в этом классе игрока и призраков, либо какие-то из них унаследовать от этого класса.
+class Entity:  # сущность - игрок и призраки
     def __init__(self, pos, board, name):
         self.board = board
         self.pos = pos
         self.name = name
         self.speed = 0.5  # от 0.1 до 1
         self.dir1 = (1, 0)  # освновное направление
-        self.dir2 = (1, 0)  # если игрок изменил направление тогда, когда в том направлении была стена, записывается сюда
+        self.dir2 = (1, 0)  # если игрок изменил направление, когда в том направлении была стена, записывается сюда
         self.timer = -5000
 
     def change_dir(self, dr):
@@ -225,7 +225,6 @@ class Board:
         self.top = 50
         self.cell_size = 50
         self.portal = False    # портала нет, пока не собраны все точки
-        self.font = load_font('18534.TTF', 32)
         self.portal_im = load_image('portal.png')
         self.kush = Entity([1, 12], self, 'kush')  # игрок
         self.sweets = []
@@ -312,7 +311,7 @@ class Board:
             screen.blit(self.portal_im, self.get_coords(self.portal))
         else:
             self.portal_necessity()
-        score_text = self.font.render(f'Score: {self.score}', True, (255, 217, 82))
+        score_text = font32.render(f'Score: {self.score}', True, (255, 217, 82))
         screen.blit(score_text, (530, 5))
 
     def get_coords(self, pos):  # преобразует позицию клетки в кординаты её левого верхнего угла
@@ -391,26 +390,39 @@ def get_results():
     return res
 
 
+# основа
 pygame.init()
 pygame.display.set_caption("Kushats")
 size = width, height = 800, 800
 screen = pygame.display.set_mode(size)
+clock = pygame.time.Clock()
+
+# оформление
 pygame.display.set_icon(load_image('icon.png'))
 bg = Animated(['background0.png', 'background2.png', 'background1.png', 'background2.png'], 250)
+res_bg = Animated(['res_background0.png', 'res_background2.png',
+                   'res_background1.png', 'res_background2.png'], 250)
 mainmenu = load_image('mainmenu.png')
-clock = pygame.time.Clock()
-running = True
-mainrunning = True
 pygame.mixer.music.load('sounds/menu.mp3')
 pygame.mixer.music.play(-1, 5000, 1000)
 newgame = Button((256, 401), 'newgame')
 quit = Button((256, 613), 'quit')
 results = Button((256, 507), 'results')
 sound = SoundWidget()
+font32 = load_font('18534.TTF', 32)
+font38 = load_font('18534.TTF', 38)
+font48 = load_font('18534.TTF', 48)
+
+# для правильной работы программы
 slider_grabbed = False
 not_results = False
+running = True
+mainrunning = True
+
+# база данных о результатах
 con = sqlite3.connect('results.db')
 cur = con.cursor()
+
 while not not_results:
     while running:
         pygame.mixer.music.set_volume(volume)
@@ -460,8 +472,6 @@ while not not_results:
     if not_results:
         break
     back = False
-    res_bg = Animated(['res_background0.png', 'res_background2.png',
-                       'res_background1.png', 'res_background2.png'], 250)
     res = get_results()
     if len(res) != 0:
         positive = max(res, key=lambda x: x[1])[1]
@@ -474,8 +484,6 @@ while not not_results:
         positive = '-'
         negative = '-'
     all_results_text = []
-    font38 = load_font('18534.TTF', 38)
-    font48 = load_font('18534.TTF', 48)
     for i, r in enumerate(res):
         if r[0] == 1:
             status = 'fail'
