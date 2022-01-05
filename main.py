@@ -409,6 +409,7 @@ while not not_results:
             if event.type == pygame.QUIT:
                 mainrunning = False
                 running = False
+                not_results = True
             elif event.type == pygame.KEYUP and event.key == 32:
                 running = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -472,12 +473,22 @@ while not not_results:
     negative_text = load_font('18534.TTF', 48).render(str(negative), True, (255, 217, 82))
     score_txt = font38.render('Score', True, (255, 217, 82))
     total_txt = font38.render('Total', True, (255, 217, 82))
+    back_btn = Button((80, 80), 'back')
     while not back:
+        pygame.mixer.music.set_volume(volume)
+        mouse = pygame.mouse.get_pos()
+        back_btn.check_selected(mouse)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 mainrunning = False
                 not_results = True
                 back = True
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                back_btn.check_pressed(mouse)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if back_btn.check_mouse(mouse):
+                    back = True
+                    running = True
         screen.blit(res_bg.get_image(), (0, 0))
         for i in range(len(all_results_text)):
             x = i // (len(all_results_text) // 2) * 390
@@ -485,7 +496,7 @@ while not not_results:
             screen.blit(all_results_text[i][0], (x + 70, y))
             screen.blit(all_results_text[i][1], (x + 130, y))
             screen.blit(all_results_text[i][2], (x + 270, y))
-
+        screen.blit(back_btn.current, back_btn.coords)
         screen.blit(total_txt, (260, 305))
         screen.blit(total_txt, (640, 305))
         screen.blit(score_txt, (120, 305))
