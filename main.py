@@ -415,6 +415,7 @@ sound = SoundWidget()
 font32 = load_font('18534.TTF', 32)
 font38 = load_font('18534.TTF', 38)
 font48 = load_font('18534.TTF', 48)
+font64 = load_font('18534.TTF', 64)
 
 # для правильной работы программы
 slider_grabbed = False
@@ -602,7 +603,7 @@ while running:
                         gamerunning = False
             screen.blit(bg.get_image(), (0, 0))
             screen.blit(table, (0, 0))
-            score_text = load_font('18534.TTF', 64).render(f'Score: {board.score}', True, (255, 217, 82))
+            score_text = font64.render(f'Score: {board.score}', True, (255, 217, 82))
             screen.blit(score_text, (400 - score_text.get_width() // 2, 333))
             for btn in [newgame, menu, results1, quit1]:
                 screen.blit(btn.current, btn.coords)
