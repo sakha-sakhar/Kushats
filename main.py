@@ -452,11 +452,15 @@ while not not_results:
     f = open('results.txt', 'r')
     res = list(map(lambda x: (x.split()[0], int(x.split()[1])), f.readlines()))
     f.close()
-    positive = max(res, key=lambda x: x[1])[1]
-    if positive <= 0:
+    if len(res) != 0:
+        positive = max(res, key=lambda x: x[1])[1]
+        if positive <= 0:
+            positive = '-'
+        negative = min(res, key=lambda x: x[1])[1]
+        if negative >= 0:
+            negative = '-'
+    else:
         positive = '-'
-    negative = min(res, key=lambda x: x[1])[1]
-    if negative >= 0:
         negative = '-'
     all_results_text = []
     font38 = load_font('18534.TTF', 38)
@@ -491,8 +495,8 @@ while not not_results:
                     running = True
         screen.blit(res_bg.get_image(), (0, 0))
         for i in range(len(all_results_text)):
-            x = i // (len(all_results_text) // 2) * 390
-            y = 345 + i % (len(all_results_text) // 2) * 27
+            x = i // ceil(len(all_results_text) / 2) * 390
+            y = 345 + i % ceil(len(all_results_text) / 2) * 27
             w_num = all_results_text[i][0].get_width()
             w_score = all_results_text[i][1].get_width()
             screen.blit(all_results_text[i][0], (x + 90 - w_num, y))
@@ -537,8 +541,14 @@ while mainrunning:
         table = load_image('gameover.png')
     elif board.gameend == 2:
         table = load_image('youwon.png')
-    f = open('results.txt', 'a')
-    f.write(f'{board.gameend} {board.score}' + '\n')
+    f = open('results.txt', 'r')
+    data = f.readlines()
+    data.append(f'{board.gameend} {board.score}' + '\n')
+    if len(data) > 28:
+        data = data[-27:]
+    f.close()
+    f = open('results.txt', 'w')
+    f.write(''.join(data))
     f.close()
     while running:
         mouse = pygame.mouse.get_pos()
