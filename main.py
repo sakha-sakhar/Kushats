@@ -493,16 +493,18 @@ while not not_results:
         for i in range(len(all_results_text)):
             x = i // (len(all_results_text) // 2) * 390
             y = 345 + i % (len(all_results_text) // 2) * 27
-            screen.blit(all_results_text[i][0], (x + 70, y))
-            screen.blit(all_results_text[i][1], (x + 130, y))
+            w_num = all_results_text[i][0].get_width()
+            w_score = all_results_text[i][1].get_width()
+            screen.blit(all_results_text[i][0], (x + 90 - w_num, y))
+            screen.blit(all_results_text[i][1], (x + 220 - w_score, y))
             screen.blit(all_results_text[i][2], (x + 270, y))
         screen.blit(back_btn.current, back_btn.coords)
         screen.blit(total_txt, (260, 305))
-        screen.blit(total_txt, (640, 305))
+        screen.blit(total_txt, (650, 305))
         screen.blit(score_txt, (120, 305))
-        screen.blit(score_txt, (500, 305))
-        screen.blit(positive_text, (454, 167))
-        screen.blit(negative_text, (454, 225))
+        screen.blit(score_txt, (510, 305))
+        screen.blit(positive_text, (454, 157))
+        screen.blit(negative_text, (454, 215))
         pygame.display.flip()
 
 while mainrunning:
