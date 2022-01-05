@@ -498,7 +498,7 @@ while not not_results:
     score_txt = font38.render('Score', True, (255, 217, 82))
     total_txt = font38.render('Total', True, (255, 217, 82))
     back_btn = Button((63, 63), 'back')
-    del_btn = Button((637, 63), 'del')
+    del_btn = Button((624, 63), 'del')
     while not back:
         pygame.mixer.music.set_volume(volume)
         mouse = pygame.mouse.get_pos()
