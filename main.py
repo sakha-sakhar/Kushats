@@ -354,6 +354,9 @@ class Button:
         else:
             self.current = self.base
 
+    def change_coords(self, x, y):
+        self.coords = x, y
+
 
 class SoundWidget(Button):
     def __init__(self):
@@ -389,6 +392,28 @@ def get_results():
         res = res[28:]
     return res
 
+
+def select_gameend_picture(score, total):
+    scores = cur.execute("""SELECT score FROM results""").fetchall()
+    if len(scores) != 0:
+        maxs = max(scores, key=lambda x: x[0])[0]
+        mins = min(scores, key=lambda x: x[0])[0]
+    else:
+        maxs = 0
+        mins = 0
+    if score > maxs or score < mins:
+        newgame.change_coords(256, 468)
+        if total == 1:
+            table = load_image('gameover_hscore.png')
+        elif board.gameend == 2:
+            table = load_image('youwon_hscore.png')
+    else:
+        newgame.change_coords(256, 401)
+        if total == 1:
+            table = load_image('gameover.png')
+        elif board.gameend == 2:
+            table = load_image('youwon.png')
+    return table
 
 # основа
 pygame.init()
@@ -473,13 +498,16 @@ while not not_results:
         break
     back = False
     res = get_results()
-    positive = '-'
-    negative = '-'
     if len(res) != 0:
-        if positive > 0:
-            positive = max(res, key=lambda x: x[1])[1]
-        if negative < 0:
-            negative = min(res, key=lambda x: x[1])[1]
+        positive = max(res, key=lambda x: x[1])[1]
+        if positive <= 0:
+            positive = '-'
+        negative = min(res, key=lambda x: x[1])[1]
+        if negative >= 0:
+            negative = '-'
+    else:
+        positive = '-'
+        negative = '-'
     all_results_text = []
     for i, r in enumerate(res):
         status = 'fail' if r[0] == 1 else 'win'
@@ -561,10 +589,7 @@ while mainrunning:
     running = True
     pygame.mixer.music.load('sounds/menu.mp3')
     pygame.mixer.music.play(-1, 5000, 1000)
-    if board.gameend == 1:
-        table = load_image('gameover.png')
-    elif board.gameend == 2:
-        table = load_image('youwon.png')
+    table = select_gameend_picture(board.score, board.gameend)
     cur.execute("""INSERT INTO results(total, score) VALUES(?, ?)""",
                 (board.gameend, board.score))
     con.commit()
