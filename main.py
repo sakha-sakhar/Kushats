@@ -634,5 +634,6 @@ while running:
             for btn in [newgame, menu, results1, quit1]:
                 screen.blit(btn.current, btn.coords)
             pygame.display.flip()
+        newgame.change_coords(256, 401)
 pygame.quit()
 con.close()
