@@ -543,6 +543,7 @@ while running:
         pygame.mixer.music.load('sounds/start.mp3')
         pygame.mixer.music.play(fade_ms=100)
         board = Board(14, 14)
+        starttime = pygame.time.get_ticks()
         while not board.gameend:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -554,6 +555,11 @@ while running:
                     else:
                         print(event.key)
             clock.tick(50)
+            timer = (pygame.time.get_ticks() - starttime) // 60000
+            print(pygame.time.get_ticks() - starttime, timer)
+            if timer == 1:
+                board.score = round(board.score * 0.9)
+                starttime += 10000
             screen.blit(bg.get_image(), (0, 0))
             board.kush.change_coords()
             for ghost in board.ghosts:
