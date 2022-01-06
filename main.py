@@ -556,7 +556,6 @@ while running:
                         print(event.key)
             clock.tick(50)
             timer = (pygame.time.get_ticks() - starttime) // 60000
-            print(pygame.time.get_ticks() - starttime, timer)
             if timer == 1:
                 board.score = round(board.score * 0.9)
                 starttime += 10000
