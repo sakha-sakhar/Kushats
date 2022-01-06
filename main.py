@@ -358,6 +358,16 @@ class Button:
         self.coords = x, y
 
 
+class CharacterBtn(Button):
+    def __init__(self, coords, name):
+        self.coords = coords
+        self.name = name
+        self.base0 = load_image(name + 'right0.png')
+        self.base1 = load_image(name + 'right1.png')
+        self.angry0 = load_image(name + 'angry0.png')
+        self.angry1 = load_image(name + 'angry0.png')
+
+
 class SoundWidget(Button):
     def __init__(self):
         self.coords = (0, 530)
@@ -441,6 +451,9 @@ font32 = load_font('18534.TTF', 32)
 font38 = load_font('18534.TTF', 38)
 font48 = load_font('18534.TTF', 48)
 font64 = load_font('18534.TTF', 64)
+characters = []
+for i, character in enumerate(['kush', 'chaser', 'mandarin', 'cloudy']):
+    characters.append(CharacterBtn((570, 415 + 70 * i), character))
 
 # для правильной работы программы
 slider_grabbed = False
@@ -495,6 +508,8 @@ while running:
                 volume = 1
             elif volume < 0:
                 volume = 0
+        for chr in characters:
+            screen.blit(chr.base0, chr.coords)
         pygame.display.flip()
 
 
