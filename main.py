@@ -11,7 +11,7 @@ directions = {0: ((1, 0), 'right'),  # вправо
               3: ((0, -1), 'up'),  # вверх
               -1: ((0, 0), 'stop')}   # стоп
 
-volume = 1  # громкость музыки
+volume = 0.3  # громкость музыки
 
 
 def load_image(name, colorkey=None):
@@ -520,8 +520,6 @@ while running:
                 newgame.check_pressed(mouse)
                 quit.check_pressed(mouse)
                 results.check_pressed(mouse)
-                for btn in characters:
-                    btn.check_pressed(mouse)
                 if sound.slider_check(mouse):
                     slider_grabbed = True
             elif event.type == pygame.MOUSEBUTTONUP:
@@ -534,16 +532,18 @@ while running:
                 elif results.check_mouse(mouse):
                     menurunning = False
                     resultsrunning = True
+                for btn in characters:
+                    btn.check_pressed(mouse)
                 ms = []
                 for btn in characters:
                     ms.append(not btn.check_mouse(mouse))
                     if btn.check_mouse(mouse) and not move:
-                        move = 200
+                        move = 195
                         for butn in [newgame, quit, results, *characters]:
                             butn.change_coords(butn.coords[0] - move, butn.coords[1])
                         break
                 if move and all(ms):
-                    move = -200
+                    move = -move
                     for butn in [newgame, quit, results, *characters]:
                         butn.change_coords(butn.coords[0] - move, butn.coords[1])
                     move = 0
