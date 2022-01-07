@@ -366,13 +366,14 @@ class CharacterBtn(Button):
         self.base1 = load_image(name + 'right1.png')
         self.angry0 = load_image(name + 'angry0.png')
         self.angry1 = load_image(name + 'angry1.png')
+        self.info = load_image(name + 'info.png')
         self.size = self.base0.get_size()
-        self.selected = 0
+        self.selected = 0  # 0 - не выбран, 1 - наведён курсор, 2 - выбран, 3 - нажат
 
     def get_image(self):
         if not self.selected:
             return self.base0
-        elif self.selected == 1:
+        elif self.selected in (1, 2):
             if pygame.time.get_ticks() // 200 % 2 == 0:
                 return self.base0
             return self.base1
@@ -381,7 +382,7 @@ class CharacterBtn(Button):
         return self.angry1
 
     def check_selected(self, mouse):
-        if self.selected == 2:
+        if self.selected in (2, 3):
             self.current = self.get_image()
             return
         if self.check_mouse(mouse):
@@ -390,9 +391,17 @@ class CharacterBtn(Button):
             self.selected = 0
         self.current = self.get_image()
 
-    def check_pressed(self, event):
-        if self.selected:
-            self.selected = 3 - self.selected
+    def check_pressed(self, mouse):
+        if not self.check_mouse(mouse):
+            if self.selected in (1, 2, 3):
+                self.selected = 0
+            return
+        if self.selected == 1:
+            self.selected = 2
+        elif self.selected == 2:
+            self.selected = 3
+        else:
+            self.selected = 2
 
 
 
@@ -534,6 +543,9 @@ while running:
         screen.blit(mainmenu, (0, 0))
         for btn in [newgame, quit, results, *characters]:
             screen.blit(btn.current, btn.coords)
+        for btn in characters:
+            if btn.selected in (2, 3):
+                screen.blit(btn.info, (0, 0))
         screen.blit(sound.get_main_image(), (0, 700))
         if sound.check_mouse(mouse) or slider_grabbed:
             screen.blit(sound.slider0, (27, 547))
@@ -544,6 +556,7 @@ while running:
                 volume = 1
             elif volume < 0:
                 volume = 0
+
         pygame.display.flip()
 
 
