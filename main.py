@@ -534,11 +534,19 @@ while running:
                 elif results.check_mouse(mouse):
                     menurunning = False
                     resultsrunning = True
+                ms = []
                 for btn in characters:
+                    ms.append(not btn.check_mouse(mouse))
                     if btn.check_mouse(mouse) and not move:
                         move = 200
-                        for btn in [newgame, quit, results, *characters]:
-                            btn.change_coords(btn.coords[0] - move, btn.coords[1])
+                        for butn in [newgame, quit, results, *characters]:
+                            butn.change_coords(butn.coords[0] - move, butn.coords[1])
+                        break
+                if move and all(ms):
+                    move = -200
+                    for butn in [newgame, quit, results, *characters]:
+                        butn.change_coords(butn.coords[0] - move, butn.coords[1])
+                    move = 0
                 slider_grabbed = False
         screen.blit(mainmenu, (0, 0))
         for btn in [newgame, quit, results, *characters]:
