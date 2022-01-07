@@ -365,7 +365,35 @@ class CharacterBtn(Button):
         self.base0 = load_image(name + 'right0.png')
         self.base1 = load_image(name + 'right1.png')
         self.angry0 = load_image(name + 'angry0.png')
-        self.angry1 = load_image(name + 'angry0.png')
+        self.angry1 = load_image(name + 'angry1.png')
+        self.size = self.base0.get_size()
+        self.selected = 0
+
+    def get_image(self):
+        if not self.selected:
+            return self.base0
+        elif self.selected == 1:
+            if pygame.time.get_ticks() // 200 % 2 == 0:
+                return self.base0
+            return self.base1
+        if pygame.time.get_ticks() // 200 % 2 == 0:
+            return self.angry0
+        return self.angry1
+
+    def check_selected(self, mouse):
+        if self.selected == 2:
+            self.current = self.get_image()
+            return
+        if self.check_mouse(mouse):
+            self.selected = 1
+        else:
+            self.selected = 0
+        self.current = self.get_image()
+
+    def check_pressed(self, event):
+        if self.selected:
+            self.selected = 3 - self.selected
+
 
 
 class SoundWidget(Button):
@@ -467,10 +495,11 @@ con = sqlite3.connect('results.db')
 cur = con.cursor()
 
 while running:
+    move = 0
     while menurunning:
         pygame.mixer.music.set_volume(volume)
         mouse = pygame.mouse.get_pos()
-        for btn in [newgame, quit, results]:
+        for btn in [newgame, quit, results, *characters]:
             btn.check_selected(mouse)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -482,6 +511,8 @@ while running:
                 newgame.check_pressed(mouse)
                 quit.check_pressed(mouse)
                 results.check_pressed(mouse)
+                for btn in characters:
+                    btn.check_pressed(mouse)
                 if sound.slider_check(mouse):
                     slider_grabbed = True
             elif event.type == pygame.MOUSEBUTTONUP:
@@ -494,9 +525,14 @@ while running:
                 elif results.check_mouse(mouse):
                     menurunning = False
                     resultsrunning = True
+                for btn in characters:
+                    if btn.check_mouse(mouse) and not move:
+                        move = 200
+                        for btn in [newgame, quit, results, *characters]:
+                            btn.change_coords(btn.coords[0] - move, btn.coords[1])
                 slider_grabbed = False
         screen.blit(mainmenu, (0, 0))
-        for btn in [newgame, quit, results]:
+        for btn in [newgame, quit, results, *characters]:
             screen.blit(btn.current, btn.coords)
         screen.blit(sound.get_main_image(), (0, 700))
         if sound.check_mouse(mouse) or slider_grabbed:
@@ -508,8 +544,6 @@ while running:
                 volume = 1
             elif volume < 0:
                 volume = 0
-        for chr in characters:
-            screen.blit(chr.base0, chr.coords)
         pygame.display.flip()
 
 
