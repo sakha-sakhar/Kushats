@@ -442,25 +442,17 @@ def get_results():
 
 def select_gameend_picture(score, total):
     scores = cur.execute("""SELECT score FROM results""").fetchall()
+    maxs = mins = 0
     if len(scores) != 0:
         maxs = max(scores, key=lambda x: x[0])[0]
         mins = min(scores, key=lambda x: x[0])[0]
-    else:
-        maxs = 0
-        mins = 0
+    im = 'gameover' if total == 1 else 'youwon'
     if score > maxs or score < mins:
         newgame.change_coords(256, 468)
-        if total == 1:
-            table = load_image('gameover_hscore.png')
-        elif board.gameend == 2:
-            table = load_image('youwon_hscore.png')
+        im += '_hscore'
     else:
         newgame.change_coords(256, 401)
-        if total == 1:
-            table = load_image('gameover.png')
-        elif board.gameend == 2:
-            table = load_image('youwon.png')
-    return table
+    return load_image(im + '.png')
 
 # основа
 pygame.init()
