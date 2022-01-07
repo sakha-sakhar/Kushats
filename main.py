@@ -104,11 +104,15 @@ class Entity:  # сущность - игрок и призраки
             im = self.name + 'angry' + str(pygame.time.get_ticks() // 200 % 2) + '.png'
             return load_image(im)
         # находит название направления
+        direction = ''
         for dr in directions:
             if directions[dr][0] == self.dir1:
                 direction = directions[dr][1]
                 break
-        im = self.name + direction + str(pygame.time.get_ticks() // 200 % 2) + '.png'
+        if direction:
+            im = self.name + direction + str(pygame.time.get_ticks() // 200 % 2) + '.png'
+        else:
+            im = 'ERROR.png'
         return load_image(im)
 
     def check_kush(self):
