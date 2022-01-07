@@ -123,15 +123,11 @@ class Entity:  # сущность - игрок и призраки
 
 
 class Ghost(Entity):
-    def __init__(self, pos, board, trajectory, name=None):
-        self.name = name
+    def __init__(self, pos, board, trajectory, name=''):
+        super().__init__(pos, board, name)
         self.trajectory = trajectory
-        self.board = board
-        self.pos = pos
         self.point = 0  # к которой точке траектории направляется
         self.speed = 0.1
-        self.dir1 = (0, 1)
-        self.timer = -5000 # время последнего столкновения
 
     def move(self):
         if not self.check_state():
