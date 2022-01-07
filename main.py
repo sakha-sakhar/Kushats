@@ -447,7 +447,7 @@ def select_gameend_picture(score, total):
         maxs = max(scores, key=lambda x: x[0])[0]
         mins = min(scores, key=lambda x: x[0])[0]
     im = 'gameover' if total == 1 else 'youwon'
-    if score > maxs or score < mins:
+    if score > maxs >= 0 or score < mins <= 0:
         newgame.change_coords(256, 468)
         im += '_hscore'
     else:
