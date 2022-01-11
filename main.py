@@ -31,7 +31,7 @@ def load_image(name, colorkey=None):
     return image
 
 
-def load_font(name, size):
+def load_font(name, font_size):
     found = True
     fullname = os.path.join('fonts', name)
     if not os.path.isfile(fullname):
@@ -44,7 +44,7 @@ def load_font(name, size):
                 found = True
                 break
     if found:
-        return pygame.font.Font(fullname, size)
+        return pygame.font.Font(fullname, font_size)
     else:
         sys.exit()
 
@@ -59,8 +59,8 @@ class Animated:
 
 
 class Entity:  # сущность - игрок и призраки
-    def __init__(self, pos, board, name):
-        self.board = board
+    def __init__(self, pos, brd, name):
+        self.board = brd
         self.pos = pos
         self.name = name
         self.speed = 0.5  # от 0.1 до 1
@@ -123,8 +123,8 @@ class Entity:  # сущность - игрок и призраки
 
 
 class Ghost(Entity):
-    def __init__(self, pos, board, trajectory, name=''):
-        super().__init__(pos, board, name)
+    def __init__(self, pos, brd, trajectory, name=''):
+        super().__init__(pos, brd, name)
         self.trajectory = trajectory
         self.point = 0  # к которой точке траектории направляется
         self.speed = 0.1
@@ -168,8 +168,8 @@ class Ghost(Entity):
 
 
 class Chaser(Ghost):
-    def __init__(self, pos, board, name):
-        super().__init__(pos, board, None, name)
+    def __init__(self, pos, brd, name):
+        super().__init__(pos, brd, None, name)
 
     def change_dir(self, dir_x, dir_y):
         if self.can_move(dir_x) and dir_x != (0, 0):
@@ -192,8 +192,8 @@ class Chaser(Ghost):
 
 
 class Sweet:
-    def __init__(self, board, name):
-        self.board = board
+    def __init__(self, brd, name):
+        self.board = brd
         self.pos = self.board.generate_pos()
         self.name = name
         self.imsmall = load_image(self.name + '.png')
@@ -204,10 +204,10 @@ class Sweet:
 
 class Board:
     # поле
-    def __init__(self, width, height):
+    def __init__(self, brd_width, brd_height):
         self.gameend = 0
-        self.width = width
-        self.height = height
+        self.width = brd_width
+        self.height = brd_height
         #         self.board = [[0] * width for _ in range(height)]      # для тестирования
         #         self.board[7] = [1] * 13 + [0]
         self.board = [[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # собственно поле
@@ -257,8 +257,8 @@ class Board:
         self.points_sound = pygame.mixer.Sound('sounds/eating points.mp3')
         self.points_sound_timer = -1000
         self.points_sound.set_volume(0.5 * volume)
-        for sound in [self.ghost_sound, self.sweet_sound, self.won_sound]:
-            sound.set_volume(volume)
+        for snd in [self.ghost_sound, self.sweet_sound, self.won_sound]:
+            snd.set_volume(volume)
 
     def check_collision(self):
         for s in self.sweets:
@@ -282,7 +282,7 @@ class Board:
             pos = n % h, n // h
         return pos
 
-    def render(self, screen):
+    def render(self, scrn):
         if self.kush.check_state():
             x, y = self.kush.pos
             x = int(int(x) + (x - int(x)) // 0.5)
@@ -293,28 +293,28 @@ class Board:
                     self.points_sound.play(0, 1000)
                     self.points_sound_timer = pygame.time.get_ticks()
             self.board[y][x] = 2
-        for i in range(self.width):
-            for j in range(self.height):
-                cell = self.board[j][i]
-                rct = (*self.get_coords([i, j]), self.cell_size, self.cell_size)
+        for _i in range(self.width):
+            for _j in range(self.height):
+                cell = self.board[_j][_i]
+                rct = (*self.get_coords([_i, _j]), self.cell_size, self.cell_size)
                 if cell == 0:  # точки
-                    screen.fill((255, 255, 0), rect=(rct[0] + self.cell_size // 2 - 5,
-                                                     rct[1] + self.cell_size // 2 - 5, 10, 10))
-        for character in (self.kush, *self.ghosts):
-            screen.blit(character.get_image(), (self.get_coords(character.pos)))
-            character.check_kush()
-        for i, s in enumerate(self.sweets):
-            if not s.eaten:
-                if s.collected:
-                    screen.blit(s.imsmall, (335 + 46 * i, 755))
+                    scrn.fill((255, 255, 0), rect=(rct[0] + self.cell_size // 2 - 5,
+                                                   rct[1] + self.cell_size // 2 - 5, 10, 10))
+        for char in (self.kush, *self.ghosts):
+            scrn.blit(char.get_image(), (self.get_coords(char.pos)))
+            char.check_kush()
+        for n, swt in enumerate(self.sweets):
+            if not swt.eaten:
+                if swt.collected:
+                    scrn.blit(swt.imsmall, (335 + 46 * n, 755))
                 else:
-                    screen.blit(s.imbig, self.get_coords(s.pos))
+                    scrn.blit(swt.imbig, self.get_coords(swt.pos))
         if self.portal != (-1, -1):
-            screen.blit(self.portal_im, self.get_coords(self.portal))
+            scrn.blit(self.portal_im, self.get_coords(self.portal))
         else:
             self.portal_necessity()
-        score_text = font32.render(f'Score: {self.score}', True, (255, 217, 82))
-        screen.blit(score_text, (530, 5))
+        scoretxt = font32.render(f'Score: {self.score}', True, (255, 217, 82))
+        scrn.blit(scoretxt, (530, 5))
 
     def get_coords(self, pos):  # преобразует позицию клетки в кординаты её левого верхнего угла
         x = pos[0] * self.cell_size + self.left
@@ -406,7 +406,6 @@ class CharacterBtn(Button):
             self.selected = 2
 
 
-
 class SoundWidget(Button):
     def __init__(self):
         self.coords = (0, 530)
@@ -433,13 +432,13 @@ class SoundWidget(Button):
 
 
 def get_results():
-    res = cur.execute("""SELECT * FROM results""").fetchall()
-    if len(res) > 28:
-        for i in range(len(res))[:-28]:
-            cur.execute("""DELETE FROM results WHERE id = ?""", (res[i][2],))
+    res_s = cur.execute("""SELECT * FROM results""").fetchall()
+    if len(res_s) > 28:
+        for i in range(len(res_s))[:-28]:
+            cur.execute("""DELETE FROM results WHERE id = ?""", (res_s[i][2],))
             con.commit()
-        res = res[28:]
-    return res
+        res_s = res_s[28:]
+    return res_s
 
 
 def select_gameend_picture(score, total):
@@ -473,11 +472,11 @@ mainmenu = load_image('mainmenu.png')
 pygame.mixer.music.load('sounds/menu.mp3')
 pygame.mixer.music.play(-1, 5000, 1000)
 newgame = Button((256, 401), 'newgame')
-quit = Button((256, 613), 'quit')
+quitbtn1 = Button((256, 613), 'quit')
 results = Button((256, 507), 'results')
 menu = Button((0, 0), 'menu')
 results1 = Button((0, 50), 'results1')
-quit1 = Button((0, 90), 'quit1')
+quitbtn2 = Button((0, 90), 'quit1')
 sound = SoundWidget()
 font32 = load_font('18534.TTF', 32)
 font38 = load_font('18534.TTF', 38)
@@ -503,7 +502,7 @@ while running:
     while menurunning:
         pygame.mixer.music.set_volume(volume)
         mouse_pos = pygame.mouse.get_pos()
-        for btn in [newgame, quit, results, *characters]:
+        for btn in [newgame, quitbtn1, results, *characters]:
             btn.check_selected(mouse_pos)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -513,7 +512,7 @@ while running:
                 menurunning = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 newgame.check_pressed(mouse_pos)
-                quit.check_pressed(mouse_pos)
+                quitbtn1.check_pressed(mouse_pos)
                 results.check_pressed(mouse_pos)
                 if sound.slider_check(mouse_pos):
                     slider_grabbed = True
@@ -521,30 +520,30 @@ while running:
                 if newgame.check_mouse(mouse_pos):
                     menurunning = False
                     gamerunning = True
-                elif quit.check_mouse(mouse_pos):
+                elif quitbtn1.check_mouse(mouse_pos):
                     running = False
                     menurunning = False
                 elif results.check_mouse(mouse_pos):
                     menurunning = False
                     resultsrunning = True
                 for btn in characters:
-                    btn.check_pressed(mouse)
+                    btn.check_pressed(mouse_pos)
                 ms = []
                 for btn in characters:
-                    ms.append(not btn.check_mouse(mouse))
-                    if btn.check_mouse(mouse) and not move:
+                    ms.append(not btn.check_mouse(mouse_pos))
+                    if btn.check_mouse(mouse_pos) and not move:
                         move = 195
-                        for butn in [newgame, quit, results, *characters]:
+                        for butn in [newgame, quitbtn1, results, *characters]:
                             butn.change_coords(butn.coords[0] - move, butn.coords[1])
                         break
                 if move and all(ms):
                     move = -move
-                    for butn in [newgame, quit, results, *characters]:
+                    for butn in [newgame, quitbtn1, results, *characters]:
                         butn.change_coords(butn.coords[0] - move, butn.coords[1])
                     move = 0
                 slider_grabbed = False
         screen.blit(mainmenu, (0, 0))
-        for btn in [newgame, quit, results, *characters]:
+        for btn in [newgame, quitbtn1, results, *characters]:
             screen.blit(btn.current, btn.coords)
         for btn in characters:
             if btn.selected in (2, 3):
@@ -560,7 +559,6 @@ while running:
             elif volume < 0:
                 volume = 0
         pygame.display.flip()
-
 
     res = get_results()
     positive = '-'
@@ -665,7 +663,7 @@ while running:
         gameoverrunning = True
         while gameoverrunning:
             mouse_pos = pygame.mouse.get_pos()
-            for btn in [newgame, menu, results1, quit1]:
+            for btn in [newgame, menu, results1, quitbtn2]:
                 btn.check_selected(mouse_pos)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -687,7 +685,7 @@ while running:
                         gameoverrunning = False
                         gamerunning = False
                         resultsrunning = True
-                    if quit1.check_mouse(mouse_pos):
+                    if quitbtn2.check_mouse(mouse_pos):
                         running = False
                         gameoverrunning = False
                         gamerunning = False
@@ -695,7 +693,7 @@ while running:
             screen.blit(table, (0, 0))
             score_text = font64.render(f'Score: {board.score}', True, (255, 217, 82))
             screen.blit(score_text, (400 - score_text.get_width() // 2, 333))
-            for btn in [newgame, menu, results1, quit1]:
+            for btn in [newgame, menu, results1, quitbtn2]:
                 screen.blit(btn.current, btn.coords)
             pygame.display.flip()
         newgame.change_coords(256, 401)
