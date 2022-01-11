@@ -72,9 +72,9 @@ class Entity:  # сущность - игрок и призраки
         self.dir2 = directions[dr][0]
 
     def can_move(self, direction):
-        x, y = direction
-        x1 = round(self.pos[0] + x * self.speed, 1)  # изменяет координаты в соответствии с направлением
-        y1 = round(self.pos[1] + y * self.speed, 1)
+        x0, y0 = direction
+        x1 = round(self.pos[0] + x0 * self.speed, 1)  # изменяет координаты в соответствии с направлением
+        y1 = round(self.pos[1] + y0 * self.speed, 1)
         try:
             # assertы обрабатывают, можно ли пойти в этом направлении
             assert 0 <= x1 <= 13 and 0 <= y1 <= 13
@@ -82,11 +82,11 @@ class Entity:  # сущность - игрок и призраки
             assert board.board[ceil(y1)][ceil(x1)] != 1
             assert board.board[floor(y1)][ceil(x1)] != 1
             assert board.board[ceil(y1)][floor(x1)] != 1
-            return (x1, y1)
+            return x1, y1
         except IndexError:
             # если в какой-то момент Кушац у стены, то выползает IndexError
-            return (x1, y1)
-        except:
+            return x1, y1
+        except Exception:
             return False
 
     def change_coords(self):
@@ -120,14 +120,12 @@ class Entity:  # сущность - игрок и призраки
 
 class Ghost(Entity):
     def __init__(self, pos, board, trajectory, name=None):
-        self.name = name
+        super().__init__(pos, board, name)
         self.trajectory = trajectory
-        self.board = board
-        self.pos = pos
         self.point = 0  # к которой точке траектории направляется
         self.speed = 0.1
         self.dir1 = (0, 1)
-        self.timer = -5000 # время последнего столкновения
+        self.timer = -5000  # время последнего столкновения
 
     def move(self):
         if not self.check_state():
@@ -168,6 +166,9 @@ class Ghost(Entity):
 
 
 class Chaser(Ghost):
+    def __init__(self, pos, board, name):
+        super().__init__(pos, board, None, name)
+
     def change_dir(self, dir_x, dir_y):
         if self.can_move(dir_x) and dir_x != (0, 0):
             self.dir2 = dir_x
@@ -201,10 +202,10 @@ class Sweet:
 
 class Board:
     # поле
-    def __init__(self, width, height):
+    def __init__(self, w, h):
         self.gameend = 0
-        self.width = width
-        self.height = height
+        self.width = w
+        self.height = h
         #         self.board = [[0] * width for _ in range(height)]      # для тестирования
         #         self.board[7] = [1] * 13 + [0]
         self.board = [[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # собственно поле
@@ -224,28 +225,28 @@ class Board:
         self.left = 50
         self.top = 50
         self.cell_size = 50
-        self.portal = False    # портала нет, пока не собраны все точки
+        self.portal = -1, -1    # портала нет, пока не собраны все точки
         self.portal_im = load_image('portal.png')
         self.kush = Entity([1, 12], self, 'kush')  # игрок
         self.sweets = []
         for name in ['donut', 'cherry', 'candycane']:
             sweet = Sweet(self, name)
             self.sweets.append(sweet)
-        chaser = Chaser([12, 3], self, None, name='chaser')  # привидение которое движется к игроку
+        chaser = Chaser([12, 3], self, name='chaser')  # привидение которое движется к игроку
         cloudy = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
-                                        (5, 11), (5, 13), (3, 13), (3, 11),
-                                        (6, 11), (6, 12), (7, 12), (7, 13),
-                                        (9, 13), (9, 9), (13, 9),
-                                        (13, 12), (12, 12), (12, 13), (10, 13),
-                                        (10, 12), (9, 12), (9, 10), (6, 10),
-                                        (6, 11), (4, 11), (4, 9), (3, 9),
-                                        (3, 2), (1, 2), (1, 0)], name='cloudy')
+                                      (5, 11), (5, 13), (3, 13), (3, 11),
+                                      (6, 11), (6, 12), (7, 12), (7, 13),
+                                      (9, 13), (9, 9), (13, 9),
+                                      (13, 12), (12, 12), (12, 13), (10, 13),
+                                      (10, 12), (9, 12), (9, 10), (6, 10),
+                                      (6, 11), (4, 11), (4, 9), (3, 9),
+                                      (3, 2), (1, 2), (1, 0)], name='cloudy')
         mandarin = Ghost((10, 2), self, [(10, 0), (12, 0), (12, 1), (13, 1),
-                                        (13, 3), (6, 3), (9, 3), (9, 0),
-                                        (7, 0), (7, 1), (5, 1), (5, 2),
-                                        (0, 2), (0, 1), (1, 1), (1, 0), (3, 0),
-                                        (3, 3), (4, 3), (4, 2), (5, 2),
-                                        (5, 0), (9, 0), (9, 2), (10, 2)], name='mandarin')
+                                         (13, 3), (6, 3), (9, 3), (9, 0),
+                                         (7, 0), (7, 1), (5, 1), (5, 2),
+                                         (0, 2), (0, 1), (1, 1), (1, 0), (3, 0),
+                                         (3, 3), (4, 3), (4, 2), (5, 2),
+                                         (5, 0), (9, 0), (9, 2), (10, 2)], name='mandarin')
         self.ghosts = [chaser, cloudy, mandarin]
         self.score = 0
         self.ghost_sound = pygame.mixer.Sound('sounds/ghost attack.mp3')
@@ -254,8 +255,8 @@ class Board:
         self.points_sound = pygame.mixer.Sound('sounds/eating points.mp3')
         self.points_sound_timer = -1000
         self.points_sound.set_volume(0.5 * volume)
-        for sound in [self.ghost_sound, self.sweet_sound, self.won_sound]:
-            sound.set_volume(volume)
+        for snd in [self.ghost_sound, self.sweet_sound, self.won_sound]:
+            snd.set_volume(volume)
 
     def check_collision(self):
         for s in self.sweets:
@@ -297,7 +298,7 @@ class Board:
                 if cell == 0:  # точки
                     screen.fill((255, 255, 0), rect=(rct[0] + self.cell_size // 2 - 5,
                                                      rct[1] + self.cell_size // 2 - 5, 10, 10))
-        #for character in (self.kush, self.cloudy, self.chaser, self.mandarin):
+        # for character in (self.kush, self.cloudy, self.chaser, self.mandarin):
         for character in (self.kush, *self.ghosts):
             screen.blit(character.get_image(), (self.get_coords(character.pos)))
             character.check_kush()
@@ -307,7 +308,7 @@ class Board:
                     screen.blit(s.imsmall, (335 + 46 * i, 755))
                 else:
                     screen.blit(s.imbig, self.get_coords(s.pos))
-        if self.portal:
+        if self.portal != (-1, -1):
             screen.blit(self.portal_im, self.get_coords(self.portal))
         else:
             self.portal_necessity()
@@ -373,12 +374,12 @@ class SoundWidget(Button):
         return self.mainpics[int(volume // 0.26)]
 
     def slider_coords(self):
-        return (16, int(547 + (1 - volume) * 171))
+        return 16, int(547 + (1 - volume) * 171)
 
-    def slider_check(self, mouse):
+    def slider_check(self, mouse_coord):
         coords = self.slider_coords()
-        if coords[0] < mouse[0] < coords[0] + self.slider1.get_width() and \
-                coords[1] < mouse[1] < coords[1] + self.slider1.get_height():
+        if coords[0] < mouse_coord[0] < coords[0] + self.slider1.get_width() and \
+                coords[1] < mouse_coord[1] < coords[1] + self.slider1.get_height():
             return True
         return False
 
@@ -396,30 +397,27 @@ def get_results():
 def select_gameend_picture(score, total):
     scores = cur.execute("""SELECT score FROM results""").fetchall()
     if len(scores) != 0:
-        maxs = max(scores, key=lambda x: x[0])[0]
-        mins = min(scores, key=lambda x: x[0])[0]
+        maxs = max(scores, key=lambda a: a[0])[0]
+        mins = min(scores, key=lambda b: b[0])[0]
     else:
         maxs = 0
         mins = 0
     if score > maxs or score < mins:
         newgame.change_coords(256, 468)
         if total == 1:
-            table = load_image('gameover_hscore.png')
-        elif board.gameend == 2:
-            table = load_image('youwon_hscore.png')
-    else:
-        newgame.change_coords(256, 401)
-        if total == 1:
-            table = load_image('gameover.png')
-        elif board.gameend == 2:
-            table = load_image('youwon.png')
-    return table
+            return load_image('gameover_hscore.png')
+        return load_image('youwon_hscore.png')
+    newgame.change_coords(256, 401)
+    if total == 1:
+        return load_image('gameover.png')
+    return load_image('youwon.png')
+
 
 # основа
 pygame.init()
 pygame.display.set_caption("Kushats")
-size = width, height = 800, 800
-screen = pygame.display.set_mode(size)
+width, height = 800, 800
+screen = pygame.display.set_mode((width, height))
 clock = pygame.time.Clock()
 
 # оформление
@@ -456,9 +454,9 @@ cur = con.cursor()
 while running:
     while menurunning:
         pygame.mixer.music.set_volume(volume)
-        mouse = pygame.mouse.get_pos()
+        mouse_pos = pygame.mouse.get_pos()
         for btn in [newgame, quit, results]:
-            btn.check_selected(mouse)
+            btn.check_selected(mouse_pos)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -466,19 +464,19 @@ while running:
             elif event.type == pygame.KEYUP and event.key == 32:
                 menurunning = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                newgame.check_pressed(mouse)
-                quit.check_pressed(mouse)
-                results.check_pressed(mouse)
-                if sound.slider_check(mouse):
+                newgame.check_pressed(mouse_pos)
+                quit.check_pressed(mouse_pos)
+                results.check_pressed(mouse_pos)
+                if sound.slider_check(mouse_pos):
                     slider_grabbed = True
             elif event.type == pygame.MOUSEBUTTONUP:
-                if newgame.check_mouse(mouse):
+                if newgame.check_mouse(mouse_pos):
                     menurunning = False
                     gamerunning = True
-                elif quit.check_mouse(mouse):
+                elif quit.check_mouse(mouse_pos):
                     running = False
                     menurunning = False
-                elif results.check_mouse(mouse):
+                elif results.check_mouse(mouse_pos):
                     menurunning = False
                     resultsrunning = True
                 slider_grabbed = False
@@ -486,26 +484,24 @@ while running:
         for btn in [newgame, quit, results]:
             screen.blit(btn.current, btn.coords)
         screen.blit(sound.get_main_image(), (0, 700))
-        if sound.check_mouse(mouse) or slider_grabbed:
+        if sound.check_mouse(mouse_pos) or slider_grabbed:
             screen.blit(sound.slider0, (27, 547))
             screen.blit(sound.slider1, sound.slider_coords())
         if slider_grabbed:
-            volume = 1 - (mouse[1] - 547) / 171
+            volume = 1 - (mouse_pos[1] - 547) / 171
             if volume > 1:
                 volume = 1
             elif volume < 0:
                 volume = 0
         pygame.display.flip()
-
-
     res = get_results()
     positive = '-'
     negative = '-'
     if len(res) != 0:
-        temp = max(res, key=lambda x: x[1])[1]
+        temp = max(res, key=lambda n: n[1])[1]
         if temp > 0:
             positive = temp
-        temp = min(res, key=lambda x: x[1])[1]
+        temp = min(res, key=lambda m: m[1])[1]
         if temp < 0:
             negative = temp
     all_results_text = []
@@ -523,21 +519,21 @@ while running:
     del_btn = Button((624, 63), 'del')
     while resultsrunning:
         pygame.mixer.music.set_volume(volume)
-        mouse = pygame.mouse.get_pos()
-        back_btn.check_selected(mouse)
-        del_btn.check_selected(mouse)
+        mouse_pos = pygame.mouse.get_pos()
+        back_btn.check_selected(mouse_pos)
+        del_btn.check_selected(mouse_pos)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
                 resultsrunning = False
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                back_btn.check_pressed(mouse)
-                del_btn.check_pressed(mouse)
+                back_btn.check_pressed(mouse_pos)
+                del_btn.check_pressed(mouse_pos)
             elif event.type == pygame.MOUSEBUTTONUP:
-                if back_btn.check_mouse(mouse):
+                if back_btn.check_mouse(mouse_pos):
                     resultsrunning = False
                     menurunning = True
-                elif del_btn.check_mouse(mouse):
+                elif del_btn.check_mouse(mouse_pos):
                     cur.execute("""DELETE FROM results""")
                     con.commit()
                     all_results_text = []
@@ -545,13 +541,13 @@ while running:
                     negative_text = font48.render('-', True, (255, 217, 82))
         screen.blit(res_bg.get_image(), (0, 0))
         for i in range(len(all_results_text)):
-            x = i // ceil(len(all_results_text) / 2) * 390
-            y = 345 + i % ceil(len(all_results_text) / 2) * 27
+            x_coord = i // ceil(len(all_results_text) / 2) * 390
+            y_coord = 345 + i % ceil(len(all_results_text) / 2) * 27
             w_num = all_results_text[i][0].get_width()
             w_score = all_results_text[i][1].get_width()
-            screen.blit(all_results_text[i][0], (x + 90 - w_num, y))
-            screen.blit(all_results_text[i][1], (x + 220 - w_score, y))
-            screen.blit(all_results_text[i][2], (x + 270, y))
+            screen.blit(all_results_text[i][0], (x_coord + 90 - w_num, y_coord))
+            screen.blit(all_results_text[i][1], (x_coord + 220 - w_score, y_coord))
+            screen.blit(all_results_text[i][2], (x_coord + 270, y_coord))
         screen.blit(back_btn.current, back_btn.coords)
         screen.blit(del_btn.current, del_btn.coords)
         screen.blit(total_txt, (260, 305))
@@ -600,9 +596,9 @@ while running:
         get_results()
         gameoverrunning = True
         while gameoverrunning:
-            mouse = pygame.mouse.get_pos()
+            mouse_pos = pygame.mouse.get_pos()
             for btn in [newgame, menu, results1, quit1]:
-                btn.check_selected(mouse)
+                btn.check_selected(mouse_pos)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     gameoverrunning = False
@@ -611,26 +607,26 @@ while running:
                 elif event.type == pygame.KEYUP and event.key == 32:
                     gameoverrunning = False
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    newgame.check_pressed(mouse)
+                    newgame.check_pressed(mouse_pos)
                 elif event.type == pygame.MOUSEBUTTONUP:
-                    if newgame.check_mouse(mouse):
+                    if newgame.check_mouse(mouse_pos):
                         gameoverrunning = False
-                    if menu.check_mouse(mouse):
+                    if menu.check_mouse(mouse_pos):
                         gameoverrunning = False
                         gamerunning = False
                         menurunning = True
-                    if results1.check_mouse(mouse):
+                    if results1.check_mouse(mouse_pos):
                         gameoverrunning = False
                         gamerunning = False
                         resultsrunning = True
-                    if quit1.check_mouse(mouse):
+                    if quit1.check_mouse(mouse_pos):
                         running = False
                         gameoverrunning = False
                         gamerunning = False
             screen.blit(bg.get_image(), (0, 0))
             screen.blit(table, (0, 0))
-            score_text = font64.render(f'Score: {board.score}', True, (255, 217, 82))
-            screen.blit(score_text, (400 - score_text.get_width() // 2, 333))
+            score_t = font64.render(f'Score: {board.score}', True, (255, 217, 82))
+            screen.blit(score_t, (400 - score_t.get_width() // 2, 333))
             for btn in [newgame, menu, results1, quit1]:
                 screen.blit(btn.current, btn.coords)
             pygame.display.flip()
