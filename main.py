@@ -456,6 +456,74 @@ def select_gameend_picture(score, total):
     return load_image(im + '.png')
 
 
+def buttons_moving():
+    for btn in characters:
+        if btn.check_mouse(mouse_pos) and newgame.coords[0] == 256:
+            print(btn.check_mouse(mouse_pos))
+            for butn in [newgame, quitbtn1, results, *characters]:
+                butn.change_coords(butn.coords[0] - 195, butn.coords[1])
+            print(newgame.coords[0])
+            return None
+    if newgame.coords[0] != 256 and not any([ch.check_mouse(mouse_pos) for ch in characters]):
+        print([ch.check_mouse(mouse_pos) for ch in characters])
+        for butn in [newgame, quitbtn1, results, *characters]:
+            butn.change_coords(butn.coords[0] + 195, butn.coords[1])
+
+
+def main_menu(sldr_grabbed, run, menu_run, game_run, result_run):
+    for btn in [newgame, quitbtn1, results, *characters]:
+        btn.check_selected(mouse_pos)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+            menu_run = False
+        elif event.type == pygame.KEYUP and event.key == 32:
+            menu_run = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            newgame.check_pressed(mouse_pos)
+            quitbtn1.check_pressed(mouse_pos)
+            results.check_pressed(mouse_pos)
+            if sound.slider_check(mouse_pos):
+                sldr_grabbed = True
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if newgame.check_mouse(mouse_pos):
+                menu_run = False
+                game_run = True
+            elif quitbtn1.check_mouse(mouse_pos):
+                run = False
+                menu_run = False
+            elif results.check_mouse(mouse_pos):
+                menu_run = False
+                result_run = True
+            for btn in characters:
+                btn.check_pressed(mouse_pos)
+            buttons_moving()
+            sldr_grabbed = False
+    screen.blit(mainmenu, (0, 0))
+    for btn in [newgame, quitbtn1, results, *characters]:
+        screen.blit(btn.current, btn.coords)
+    for btn in characters:
+        if btn.selected in (2, 3):
+            screen.blit(btn.info, (0, 0))
+    screen.blit(sound.get_main_image(), (0, 700))
+    if sound.check_mouse(mouse_pos) or slider_grabbed:
+        screen.blit(sound.slider0, (27, 547))
+        screen.blit(sound.slider1, sound.slider_coords())
+    pygame.display.flip()
+    return sldr_grabbed, run, menu_run, game_run, result_run
+
+
+def results_text_render():
+    text = []
+    for i, r in enumerate(res):
+        status = 'fail' if r[0] == 1 else 'win'
+        text0 = font38.render(f'{i + 1}', True, (255, 217, 82))
+        text1 = font38.render(str(r[1]), True, (255, 217, 82))
+        text2 = font38.render(status, True, (255, 217, 82))
+        text.append((text0, text1, text2))
+    return text
+
+
 # основа
 pygame.init()
 pygame.display.set_caption("Kushats")
@@ -498,67 +566,17 @@ con = sqlite3.connect('results.db')
 cur = con.cursor()
 
 while running:
-    move = 0
     while menurunning:
         pygame.mixer.music.set_volume(volume)
         mouse_pos = pygame.mouse.get_pos()
-        for btn in [newgame, quitbtn1, results, *characters]:
-            btn.check_selected(mouse_pos)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-                menurunning = False
-            elif event.type == pygame.KEYUP and event.key == 32:
-                menurunning = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                newgame.check_pressed(mouse_pos)
-                quitbtn1.check_pressed(mouse_pos)
-                results.check_pressed(mouse_pos)
-                if sound.slider_check(mouse_pos):
-                    slider_grabbed = True
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if newgame.check_mouse(mouse_pos):
-                    menurunning = False
-                    gamerunning = True
-                elif quitbtn1.check_mouse(mouse_pos):
-                    running = False
-                    menurunning = False
-                elif results.check_mouse(mouse_pos):
-                    menurunning = False
-                    resultsrunning = True
-                for btn in characters:
-                    btn.check_pressed(mouse_pos)
-                ms = []
-                for btn in characters:
-                    ms.append(not btn.check_mouse(mouse_pos))
-                    if btn.check_mouse(mouse_pos) and not move:
-                        move = 195
-                        for butn in [newgame, quitbtn1, results, *characters]:
-                            butn.change_coords(butn.coords[0] - move, butn.coords[1])
-                        break
-                if move and all(ms):
-                    move = -move
-                    for butn in [newgame, quitbtn1, results, *characters]:
-                        butn.change_coords(butn.coords[0] - move, butn.coords[1])
-                    move = 0
-                slider_grabbed = False
-        screen.blit(mainmenu, (0, 0))
-        for btn in [newgame, quitbtn1, results, *characters]:
-            screen.blit(btn.current, btn.coords)
-        for btn in characters:
-            if btn.selected in (2, 3):
-                screen.blit(btn.info, (0, 0))
-        screen.blit(sound.get_main_image(), (0, 700))
-        if sound.check_mouse(mouse_pos) or slider_grabbed:
-            screen.blit(sound.slider0, (27, 547))
-            screen.blit(sound.slider1, sound.slider_coords())
+        boolean = main_menu(slider_grabbed, running, menurunning, gamerunning, resultsrunning)
+        slider_grabbed, running, menurunning, gamerunning, resultsrunning = boolean
         if slider_grabbed:
             volume = 1 - (mouse_pos[1] - 547) / 171
             if volume > 1:
                 volume = 1
             elif volume < 0:
                 volume = 0
-        pygame.display.flip()
 
     res = get_results()
     positive = '-'
@@ -570,13 +588,7 @@ while running:
         temp = min(res, key=lambda m: m[1])[1]
         if temp < 0:
             negative = temp
-    all_results_text = []
-    for i, r in enumerate(res):
-        status = 'fail' if r[0] == 1 else 'win'
-        text0 = font38.render(f'{i + 1}', True, (255, 217, 82))
-        text1 = font38.render(str(r[1]), True, (255, 217, 82))
-        text2 = font38.render(status, True, (255, 217, 82))
-        all_results_text.append((text0, text1, text2))
+    all_results_text = results_text_render()
     positive_text = font48.render(str(positive), True, (255, 217, 82))
     negative_text = font48.render(str(negative), True, (255, 217, 82))
     score_txt = font38.render('Score', True, (255, 217, 82))
