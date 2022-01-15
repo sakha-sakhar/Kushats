@@ -459,13 +459,10 @@ def select_gameend_picture(score, total):
 def buttons_moving():
     for btn in characters:
         if btn.check_mouse(mouse_pos) and newgame.coords[0] == 256:
-            print(btn.check_mouse(mouse_pos))
             for butn in [newgame, quitbtn1, results, *characters]:
                 butn.change_coords(butn.coords[0] - 195, butn.coords[1])
-            print(newgame.coords[0])
             return None
     if newgame.coords[0] != 256 and not any([ch.check_mouse(mouse_pos) for ch in characters]):
-        print([ch.check_mouse(mouse_pos) for ch in characters])
         for butn in [newgame, quitbtn1, results, *characters]:
             butn.change_coords(butn.coords[0] + 195, butn.coords[1])
 
@@ -524,6 +521,40 @@ def results_text_render():
     return text
 
 
+def results_window(rslt_txt, run, result_run, menu_run):
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+            result_run = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            back_btn.check_pressed(mouse_pos)
+            del_btn.check_pressed(mouse_pos)
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if back_btn.check_mouse(mouse_pos):
+                result_run = False
+                menu_run = True
+            elif del_btn.check_mouse(mouse_pos):
+                cur.execute("""DELETE FROM results""")
+                con.commit()
+                rslt_txt = []
+    screen.blit(res_bg.get_image(), (0, 0))
+    for i in range(len(rslt_txt)):
+        x_coord = i // ceil(len(rslt_txt) / 2) * 390
+        y_coord = 345 + i % ceil(len(rslt_txt) / 2) * 27
+        w_num = rslt_txt[i][0].get_width()
+        w_score = rslt_txt[i][1].get_width()
+        screen.blit(rslt_txt[i][0], (x_coord + 90 - w_num, y_coord))
+        screen.blit(rslt_txt[i][1], (x_coord + 220 - w_score, y_coord))
+        screen.blit(rslt_txt[i][2], (x_coord + 270, y_coord))
+    screen.blit(back_btn.current, back_btn.coords)
+    screen.blit(del_btn.current, del_btn.coords)
+    screen.blit(total_txt, (260, 305))
+    screen.blit(total_txt, (650, 305))
+    screen.blit(score_txt, (120, 305))
+    screen.blit(score_txt, (510, 305))
+    return rslt_txt, run, result_run, menu_run
+
+
 # основа
 pygame.init()
 pygame.display.set_caption("Kushats")
@@ -567,7 +598,6 @@ cur = con.cursor()
 
 while running:
     while menurunning:
-        pygame.mixer.music.set_volume(volume)
         mouse_pos = pygame.mouse.get_pos()
         boolean = main_menu(slider_grabbed, running, menurunning, gamerunning, resultsrunning)
         slider_grabbed, running, menurunning, gamerunning, resultsrunning = boolean
@@ -577,6 +607,7 @@ while running:
                 volume = 1
             elif volume < 0:
                 volume = 0
+        pygame.mixer.music.set_volume(volume)
 
     res = get_results()
     positive = '-'
@@ -596,42 +627,14 @@ while running:
     back_btn = Button((63, 63), 'back')
     del_btn = Button((624, 63), 'del')
     while resultsrunning:
-        pygame.mixer.music.set_volume(volume)
         mouse_pos = pygame.mouse.get_pos()
         back_btn.check_selected(mouse_pos)
         del_btn.check_selected(mouse_pos)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-                resultsrunning = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                back_btn.check_pressed(mouse_pos)
-                del_btn.check_pressed(mouse_pos)
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if back_btn.check_mouse(mouse_pos):
-                    resultsrunning = False
-                    menurunning = True
-                elif del_btn.check_mouse(mouse_pos):
-                    cur.execute("""DELETE FROM results""")
-                    con.commit()
-                    all_results_text = []
-                    positive_text = font48.render('-', True, (255, 217, 82))
-                    negative_text = font48.render('-', True, (255, 217, 82))
-        screen.blit(res_bg.get_image(), (0, 0))
-        for i in range(len(all_results_text)):
-            x_coord = i // ceil(len(all_results_text) / 2) * 390
-            y_coord = 345 + i % ceil(len(all_results_text) / 2) * 27
-            w_num = all_results_text[i][0].get_width()
-            w_score = all_results_text[i][1].get_width()
-            screen.blit(all_results_text[i][0], (x_coord + 90 - w_num, y_coord))
-            screen.blit(all_results_text[i][1], (x_coord + 220 - w_score, y_coord))
-            screen.blit(all_results_text[i][2], (x_coord + 270, y_coord))
-        screen.blit(back_btn.current, back_btn.coords)
-        screen.blit(del_btn.current, del_btn.coords)
-        screen.blit(total_txt, (260, 305))
-        screen.blit(total_txt, (650, 305))
-        screen.blit(score_txt, (120, 305))
-        screen.blit(score_txt, (510, 305))
+        boolean = results_window(all_results_text, running, resultsrunning, menurunning)
+        all_results_text, running, resultsrunning, menurunning = boolean
+        if not all_results_text:
+            positive_text = font48.render('-', True, (255, 217, 82))
+            negative_text = font48.render('-', True, (255, 217, 82))
         screen.blit(positive_text, (454, 157))
         screen.blit(negative_text, (454, 215))
         pygame.display.flip()
