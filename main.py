@@ -579,6 +579,44 @@ def game_window(run, game_run, start_time):
     pygame.display.flip()
     return run, game_run
 
+
+def game_over_window(run, game_over_run, game_run, menu_run, results_run):
+    for btn in [newgame, menu, results1, quitbtn2]:
+        btn.check_selected(mouse_pos)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            game_over_run = False
+            game_run = False
+            run = False
+        elif event.type == pygame.KEYUP and event.key == 32:
+            game_over_run = False
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            newgame.check_pressed(mouse_pos)
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if newgame.check_mouse(mouse_pos):
+                game_over_run = False
+            if menu.check_mouse(mouse_pos):
+                game_over_run = False
+                game_run = False
+                menu_run = True
+            elif results1.check_mouse(mouse_pos):
+                game_over_run = False
+                game_run = False
+                results_run = True
+            elif quitbtn2.check_mouse(mouse_pos):
+                run = False
+                game_over_run = False
+                game_run = False
+    screen.blit(bg.get_image(), (0, 0))
+    screen.blit(table, (0, 0))
+    score_text = font64.render(f'Score: {board.score}', True, (255, 217, 82))
+    screen.blit(score_text, (400 - score_text.get_width() // 2, 333))
+    for btn in [newgame, menu, results1, quitbtn2]:
+        screen.blit(btn.current, btn.coords)
+    pygame.display.flip()
+    return run, game_over_run, game_run, menu_run, results_run
+
+
 # основа
 pygame.init()
 pygame.display.set_caption("Kushats")
@@ -682,39 +720,9 @@ while running:
         gameoverrunning = True
         while gameoverrunning:
             mouse_pos = pygame.mouse.get_pos()
-            for btn in [newgame, menu, results1, quitbtn2]:
-                btn.check_selected(mouse_pos)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    gameoverrunning = False
-                    gamerunning = False
-                    running = False
-                elif event.type == pygame.KEYUP and event.key == 32:
-                    gameoverrunning = False
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    newgame.check_pressed(mouse_pos)
-                elif event.type == pygame.MOUSEBUTTONUP:
-                    if newgame.check_mouse(mouse_pos):
-                        gameoverrunning = False
-                    if menu.check_mouse(mouse_pos):
-                        gameoverrunning = False
-                        gamerunning = False
-                        menurunning = True
-                    if results1.check_mouse(mouse_pos):
-                        gameoverrunning = False
-                        gamerunning = False
-                        resultsrunning = True
-                    if quitbtn2.check_mouse(mouse_pos):
-                        running = False
-                        gameoverrunning = False
-                        gamerunning = False
-            screen.blit(bg.get_image(), (0, 0))
-            screen.blit(table, (0, 0))
-            score_text = font64.render(f'Score: {board.score}', True, (255, 217, 82))
-            screen.blit(score_text, (400 - score_text.get_width() // 2, 333))
-            for btn in [newgame, menu, results1, quitbtn2]:
-                screen.blit(btn.current, btn.coords)
-            pygame.display.flip()
+            boolean = game_over_window(running, gameoverrunning,
+                                       gamerunning, menurunning, resultsrunning)
+            running, gameoverrunning, gamerunning, menurunning, resultsrunning = boolean
         newgame.change_coords(256, 401)
 pygame.quit()
 con.close()
