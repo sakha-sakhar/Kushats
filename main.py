@@ -555,6 +555,30 @@ def results_window(rslt_txt, run, result_run, menu_run):
     return rslt_txt, run, result_run, menu_run
 
 
+def game_window(run, game_run, start_time):
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+            game_run = False
+        if event.type == pygame.KEYUP:  # стрелки
+            if 1073741903 <= event.key <= 1073741906:
+                board.kush.change_dir(event.key - 1073741903)
+            else:
+                print(event.key)
+    clock.tick(50)
+    timer = (pygame.time.get_ticks() - start_time) // 60000
+    if timer == 1:
+        board.score = round(board.score * 0.9)
+        start_time += 10000
+    screen.blit(bg.get_image(), (0, 0))
+    board.kush.change_coords()
+    for ghost in board.ghosts:
+        ghost.move()
+    board.check_collision()
+    board.render(screen)
+    pygame.display.flip()
+    return run, game_run
+
 # основа
 pygame.init()
 pygame.display.set_caption("Kushats")
@@ -646,27 +670,7 @@ while running:
         board = Board(14, 14)
         starttime = pygame.time.get_ticks()
         while not board.gameend:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                    gamerunning = False
-                if event.type == pygame.KEYUP:  # стрелки
-                    if 1073741903 <= event.key <= 1073741906:
-                        board.kush.change_dir(event.key - 1073741903)
-                    else:
-                        print(event.key)
-            clock.tick(50)
-            timer = (pygame.time.get_ticks() - starttime) // 60000
-            if timer == 1:
-                board.score = round(board.score * 0.9)
-                starttime += 10000
-            screen.blit(bg.get_image(), (0, 0))
-            board.kush.change_coords()
-            for ghost in board.ghosts:
-                ghost.move()
-            board.check_collision()
-            board.render(screen)
-            pygame.display.flip()
+            running, gamerunning = game_window(running, gamerunning, starttime)
         pygame.time.wait(1850)
         pygame.mixer.music.load('sounds/menu.mp3')
         pygame.mixer.music.play(-1, 5000, 1000)
