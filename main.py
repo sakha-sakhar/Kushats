@@ -278,7 +278,7 @@ class Board:
         poses = [s.pos for s in self.sweets]
         poses.append(tuple(self.kush.pos))
         while pos in poses or self.board[pos[1]][pos[0]] == 1:
-            n = randint(0, w * h)
+            n = randint(0, w * h - 1)
             pos = n % h, n // h
         return pos
 
@@ -448,7 +448,8 @@ def select_gameend_picture(score, total):
         maxs = max(scores, key=lambda a: a[0])[0]
         mins = min(scores, key=lambda b: b[0])[0]
     im = 'gameover' if total == 1 else 'youwon'
-    if score > maxs >= 0 or score < mins <= 0:
+    print(score, maxs, mins)
+    if maxs < score > 0 or mins > score < 0:
         newgame.change_coords(256, 468)
         im += '_hscore'
     else:
