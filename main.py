@@ -468,13 +468,18 @@ def buttons_moving():
             butn.change_coords(butn.coords[0] + 195, butn.coords[1])
 
 
-def main_menu(sldr_grabbed, run, menu_run, game_run, result_run):
+def terminate():
+    con.close()
+    pygame.quit()
+    sys.exit()
+
+
+def main_menu(sldr_grabbed, menu_run, game_run, result_run):
     for btn in [newgame, quitbtn1, results, *characters]:
         btn.check_selected(mouse_pos)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            run = False
-            menu_run = False
+            terminate()
         elif event.type == pygame.KEYUP and event.key == 32:
             menu_run = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -488,8 +493,7 @@ def main_menu(sldr_grabbed, run, menu_run, game_run, result_run):
                 menu_run = False
                 game_run = True
             elif quitbtn1.check_mouse(mouse_pos):
-                run = False
-                menu_run = False
+                terminate()
             elif results.check_mouse(mouse_pos):
                 menu_run = False
                 result_run = True
@@ -508,7 +512,7 @@ def main_menu(sldr_grabbed, run, menu_run, game_run, result_run):
         screen.blit(sound.slider0, (27, 547))
         screen.blit(sound.slider1, sound.slider_coords())
     pygame.display.flip()
-    return sldr_grabbed, run, menu_run, game_run, result_run
+    return sldr_grabbed, menu_run, game_run, result_run
 
 
 def results_text_render():
@@ -522,11 +526,10 @@ def results_text_render():
     return text
 
 
-def results_window(rslt_txt, run, result_run, menu_run):
+def results_window(rslt_txt, result_run, menu_run):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            run = False
-            result_run = False
+            terminate()
         elif event.type == pygame.MOUSEBUTTONDOWN:
             back_btn.check_pressed(mouse_pos)
             del_btn.check_pressed(mouse_pos)
@@ -553,14 +556,13 @@ def results_window(rslt_txt, run, result_run, menu_run):
     screen.blit(total_txt, (650, 305))
     screen.blit(score_txt, (120, 305))
     screen.blit(score_txt, (510, 305))
-    return rslt_txt, run, result_run, menu_run
+    return rslt_txt, result_run, menu_run
 
 
-def game_window(run, game_run, start_time):
+def game_window(game_run, start_time):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            run = False
-            game_run = False
+            terminate()
         if event.type == pygame.KEYUP:  # стрелки
             if 1073741903 <= event.key <= 1073741906:
                 board.kush.change_dir(event.key - 1073741903)
@@ -578,17 +580,15 @@ def game_window(run, game_run, start_time):
     board.check_collision()
     board.render(screen)
     pygame.display.flip()
-    return run, game_run
+    return game_run
 
 
-def game_over_window(run, game_over_run, game_run, menu_run, results_run):
+def game_over_window(game_over_run, game_run, menu_run, results_run):
     for btn in [newgame, menu, results1, quitbtn2]:
         btn.check_selected(mouse_pos)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            game_over_run = False
-            game_run = False
-            run = False
+            terminate()
         elif event.type == pygame.KEYUP and event.key == 32:
             game_over_run = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -605,9 +605,7 @@ def game_over_window(run, game_over_run, game_run, menu_run, results_run):
                 game_run = False
                 results_run = True
             elif quitbtn2.check_mouse(mouse_pos):
-                run = False
-                game_over_run = False
-                game_run = False
+                terminate()
     screen.blit(bg.get_image(), (0, 0))
     screen.blit(table, (0, 0))
     score_text = font64.render(f'Score: {board.score}', True, (255, 217, 82))
@@ -615,7 +613,7 @@ def game_over_window(run, game_over_run, game_run, menu_run, results_run):
     for btn in [newgame, menu, results1, quitbtn2]:
         screen.blit(btn.current, btn.coords)
     pygame.display.flip()
-    return run, game_over_run, game_run, menu_run, results_run
+    return game_over_run, game_run, menu_run, results_run
 
 
 # основа
@@ -645,8 +643,8 @@ font38 = load_font('18534.TTF', 38)
 font48 = load_font('18534.TTF', 48)
 font64 = load_font('18534.TTF', 64)
 characters = []
-for i, character in enumerate(['kush', 'chaser', 'mandarin', 'cloudy']):
-    characters.append(CharacterBtn((570, 415 + 70 * i), character))
+for j, character in enumerate(['kush', 'chaser', 'mandarin', 'cloudy']):
+    characters.append(CharacterBtn((570, 415 + 70 * j), character))
 
 # для правильной работы программы
 slider_grabbed = False
@@ -662,8 +660,8 @@ cur = con.cursor()
 while running:
     while menurunning:
         mouse_pos = pygame.mouse.get_pos()
-        boolean = main_menu(slider_grabbed, running, menurunning, gamerunning, resultsrunning)
-        slider_grabbed, running, menurunning, gamerunning, resultsrunning = boolean
+        slider_grabbed, menurunning, gamerunning, resultsrunning = main_menu(
+            slider_grabbed, menurunning, gamerunning, resultsrunning)
         if slider_grabbed:
             volume = 1 - (mouse_pos[1] - 547) / 171
             if volume > 1:
@@ -693,8 +691,8 @@ while running:
         mouse_pos = pygame.mouse.get_pos()
         back_btn.check_selected(mouse_pos)
         del_btn.check_selected(mouse_pos)
-        boolean = results_window(all_results_text, running, resultsrunning, menurunning)
-        all_results_text, running, resultsrunning, menurunning = boolean
+        all_results_text, resultsrunning, menurunning = results_window(
+            all_results_text, resultsrunning, menurunning)
         if not all_results_text:
             positive_text = font48.render('-', True, (255, 217, 82))
             negative_text = font48.render('-', True, (255, 217, 82))
@@ -709,7 +707,7 @@ while running:
         board = Board(14, 14)
         starttime = pygame.time.get_ticks()
         while not board.gameend:
-            running, gamerunning = game_window(running, gamerunning, starttime)
+            gamerunning = game_window(gamerunning, starttime)
         pygame.time.wait(1850)
         pygame.mixer.music.load('sounds/menu.mp3')
         pygame.mixer.music.play(-1, 5000, 1000)
@@ -721,9 +719,7 @@ while running:
         gameoverrunning = True
         while gameoverrunning:
             mouse_pos = pygame.mouse.get_pos()
-            boolean = game_over_window(running, gameoverrunning,
-                                       gamerunning, menurunning, resultsrunning)
-            running, gameoverrunning, gamerunning, menurunning, resultsrunning = boolean
+            gameoverrunning, gamerunning, menurunning, resultsrunning = game_over_window(
+                gameoverrunning, gamerunning, menurunning, resultsrunning)
         newgame.change_coords(256, 401)
-pygame.quit()
-con.close()
+terminate()
