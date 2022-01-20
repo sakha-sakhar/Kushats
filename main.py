@@ -568,11 +568,11 @@ def game_window(game_run, start_time):
                 board.kush.change_dir(event.key - 1073741903)
             else:
                 print(event.key)
-    clock.tick(50)
+    clock.tick(37)
     timer = (pygame.time.get_ticks() - start_time) // 60000
     if timer == 1:
         board.score = round(board.score * 0.9)
-        start_time += 10000
+        start_time += 60000
     screen.blit(bg.get_image(), (0, 0))
     board.kush.change_coords()
     for ghost in board.ghosts:
@@ -580,7 +580,7 @@ def game_window(game_run, start_time):
     board.check_collision()
     board.render(screen)
     pygame.display.flip()
-    return game_run
+    return game_run, start_time
 
 
 def game_over_window(game_over_run, game_run, menu_run, results_run):
@@ -707,7 +707,7 @@ while running:
         board = Board(14, 14)
         starttime = pygame.time.get_ticks()
         while not board.gameend:
-            gamerunning = game_window(gamerunning, starttime)
+            gamerunning, starttime = game_window(gamerunning, starttime)
         pygame.time.wait(1850)
         pygame.mixer.music.load('sounds/menu.mp3')
         pygame.mixer.music.play(-1, 5000, 1000)
