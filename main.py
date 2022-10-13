@@ -15,7 +15,7 @@ volume = 0.3  # громкость музыки
 
 difficulty = 0
 
-diffs = {0: (0.3, 0.1),
+diffs = {0: (0.3, 0.05),
          1: (0.5, 0.1),
          2: (0.6, 0.3)}
 
@@ -79,8 +79,8 @@ class Entity:  # сущность - игрок и призраки
 
     def can_move(self, direction):
         x0, y0 = direction
-        x1 = round(self.pos[0] + x0 * self.speed, 1)  # изменяет координаты в соответствии с направлением
-        y1 = round(self.pos[1] + y0 * self.speed, 1)
+        x1 = round(self.pos[0] + x0 * self.speed, 3)  # изменяет координаты в соответствии с направлением
+        y1 = round(self.pos[1] + y0 * self.speed, 3)
         try:
             # assertы обрабатывают, можно ли пойти в этом направлении
             assert 0 <= x1 <= 13 and 0 <= y1 <= 13
@@ -88,21 +88,34 @@ class Entity:  # сущность - игрок и призраки
             assert board.board[ceil(y1)][ceil(x1)] != 1
             assert board.board[floor(y1)][ceil(x1)] != 1
             assert board.board[ceil(y1)][floor(x1)] != 1
-            return x1, y1
+            tf = True
         except IndexError:
-            # если в какой-то момент Кушац у стены, то выползает IndexError
-            return x1, y1
-        except Exception:
-            return False
+            tf = True
+        except Exception:   # наверное, следует как-то переписать
+            x1 = self.pos[0]
+            y1 = self.pos[1]
+            if x0 == 1:
+                x1 = ceil(x1)
+            elif x0 == -1:
+                x1 = floor(x1)
+            if y0 == 1:
+                y1 = ceil(y1)
+            elif y0 == -1:
+                y1 = floor(y1)
+            tf = False
+        return x1, y1, tf
 
     def change_coords(self):
-        for direction in [self.dir2, self.dir1]:  # сначала обрабатывает dir2, если не сработало - dir1
-            a = self.can_move(direction)
-            if a:
-                self.pos = a
-                self.dir1 = direction
-                return True
-        return False
+        # сначала обрабатывает dir2
+        # он в приоритете, но если мы не можем двигаться по направлению dir2,
+        # мы направление пока не меняем
+        a = self.can_move(self.dir2)
+        if a[2]:
+            self.pos = (a[0], a[1])
+            self.dir1 = self.dir2
+            return True
+        a = self.can_move(self.dir1)
+        self.pos = (a[0], a[1])
 
     def get_image(self):
         # для картинок из таймаута
@@ -178,9 +191,9 @@ class Chaser(Ghost):
         super().__init__(pos, brd, None, 'chaser', speed)
 
     def change_dir(self, dir_x, dir_y):
-        if self.can_move(dir_x) and dir_x != (0, 0):
+        if self.can_move(dir_x)[2] and dir_x != (0, 0):
             self.dir2 = dir_x
-        elif self.can_move(dir_y) and dir_y != (0, 0):
+        elif self.can_move(dir_y)[2] and dir_y != (0, 0):
             self.dir2 = dir_y
         else:
             self.dir2 = (0, 0)
