@@ -13,6 +13,12 @@ directions = {0: ((1, 0), 'right'),  # вправо
 
 volume = 0.3  # громкость музыки
 
+difficulty = 0
+
+diffs = {0: (0.3, 0.1),
+         1: (0.5, 0.1),
+         2: (0.6, 0.3)}
+
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('images', name)
@@ -59,11 +65,11 @@ class Animated:
 
 
 class Entity:  # сущность - игрок и призраки
-    def __init__(self, pos, brd, name):
+    def __init__(self, pos, brd, name, speed=0.5):
         self.board = brd
         self.pos = pos
         self.name = name
-        self.speed = 0.5  # от 0.1 до 1
+        self.speed = speed  # от 0.1 до 1
         self.dir1 = (1, 0)  # освновное направление
         self.dir2 = (1, 0)  # если игрок изменил направление, когда в том направлении была стена, записывается сюда
         self.timer = -5000
@@ -123,11 +129,11 @@ class Entity:  # сущность - игрок и призраки
 
 
 class Ghost(Entity):
-    def __init__(self, pos, brd, trajectory, name=''):
+    def __init__(self, pos, brd, trajectory, name='', speed=0.1):
         super().__init__(pos, brd, name)
         self.trajectory = trajectory
         self.point = 0  # к которой точке траектории направляется
-        self.speed = 0.1
+        self.speed = speed
 
     def move(self):
         if not self.check_state():
@@ -168,8 +174,8 @@ class Ghost(Entity):
 
 
 class Chaser(Ghost):
-    def __init__(self, pos, brd, name):
-        super().__init__(pos, brd, None, name)
+    def __init__(self, pos, brd, speed=0.1):
+        super().__init__(pos, brd, None, 'chaser', speed)
 
     def change_dir(self, dir_x, dir_y):
         if self.can_move(dir_x) and dir_x != (0, 0):
@@ -204,12 +210,9 @@ class Sweet:
 
 class Board:
     # поле
-    def __init__(self, brd_width, brd_height):
+    def __init__(self, difsets):
         self.gameend = 0
-        self.width = brd_width
-        self.height = brd_height
-        #         self.board = [[0] * width for _ in range(height)]      # для тестирования
-        #         self.board[7] = [1] * 13 + [0]
+        self.width = self.height = 14
         self.board = [[1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # собственно поле
                       [0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0],
                       [0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0],
@@ -229,12 +232,12 @@ class Board:
         self.cell_size = 50
         self.portal = -1, -1    # портала нет, пока не собраны все точки
         self.portal_im = load_image('portal.png')
-        self.kush = Entity([1, 12], self, 'kush')  # игрок
+        self.kush = Entity([1, 12], self, 'kush', speed=difsets[0])  # игрок
         self.sweets = []
         for name in ['donut', 'cherry', 'candycane']:
             sweet = Sweet(self, name)
             self.sweets.append(sweet)
-        chaser = Chaser([12, 3], self, name='chaser')  # привидение которое движется к игроку
+        chaser = Chaser([12, 3], self, speed=difsets[1])  # привидение которое движется к игроку
         cloudy = Ghost((1, 0), self, [(3, 0), (3, 9), (4, 9), (4, 11),
                                       (5, 11), (5, 13), (3, 13), (3, 11),
                                       (6, 11), (6, 12), (7, 12), (7, 13),
@@ -242,13 +245,13 @@ class Board:
                                       (13, 12), (12, 12), (12, 13), (10, 13),
                                       (10, 12), (9, 12), (9, 10), (6, 10),
                                       (6, 11), (4, 11), (4, 9), (3, 9),
-                                      (3, 2), (1, 2), (1, 0)], name='cloudy')
+                                      (3, 2), (1, 2), (1, 0)], name='cloudy', speed=difsets[1])
         mandarin = Ghost((10, 2), self, [(10, 0), (12, 0), (12, 1), (13, 1),
                                          (13, 3), (6, 3), (9, 3), (9, 0),
                                          (7, 0), (7, 1), (5, 1), (5, 2),
                                          (0, 2), (0, 1), (1, 1), (1, 0), (3, 0),
                                          (3, 3), (4, 3), (4, 2), (5, 2),
-                                         (5, 0), (9, 0), (9, 2), (10, 2)], name='mandarin')
+                                         (5, 0), (9, 0), (9, 2), (10, 2)], name='mandarin', speed=difsets[1])
         self.ghosts = [chaser, cloudy, mandarin]
         self.score = 0
         self.ghost_sound = pygame.mixer.Sound('sounds/ghost attack.mp3')
@@ -704,8 +707,11 @@ while running:
         pygame.mixer.music.unload()
         pygame.mixer.music.load('sounds/start.mp3')
         pygame.mixer.music.play(fade_ms=100)
-        board = Board(14, 14)
+        board = Board(diffs[difficulty])
         starttime = pygame.time.get_ticks()
+        #
+        #
+        #
         while not board.gameend:
             gamerunning, starttime = game_window(gamerunning, starttime)
         pygame.time.wait(1850)
