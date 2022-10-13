@@ -13,11 +13,11 @@ directions = {0: ((1, 0), 'right'),  # вправо
 
 volume = 0.3  # громкость музыки
 
-difficulty = 0
+difficulty = 2
 
-diffs = {0: (0.3, 0.05),
+diffs = {0: (0.25, 0.0625),
          1: (0.5, 0.1),
-         2: (0.6, 0.3)}
+         2: (0.5, 0.25)}
 
 
 def load_image(name, colorkey=None):
@@ -79,8 +79,9 @@ class Entity:  # сущность - игрок и призраки
 
     def can_move(self, direction):
         x0, y0 = direction
-        x1 = round(self.pos[0] + x0 * self.speed, 3)  # изменяет координаты в соответствии с направлением
-        y1 = round(self.pos[1] + y0 * self.speed, 3)
+        x1 = round(self.pos[0] + x0 * self.speed, 4)  # изменяет координаты в соответствии с направлением
+        y1 = round(self.pos[1] + y0 * self.speed, 4)
+        tf = True
         try:
             # assertы обрабатывают, можно ли пойти в этом направлении
             assert 0 <= x1 <= 13 and 0 <= y1 <= 13
@@ -88,9 +89,8 @@ class Entity:  # сущность - игрок и призраки
             assert board.board[ceil(y1)][ceil(x1)] != 1
             assert board.board[floor(y1)][ceil(x1)] != 1
             assert board.board[ceil(y1)][floor(x1)] != 1
-            tf = True
         except IndexError:
-            tf = True
+            pass
         except Exception:   # наверное, следует как-то переписать
             x1 = self.pos[0]
             y1 = self.pos[1]
@@ -102,7 +102,8 @@ class Entity:  # сущность - игрок и призраки
                 y1 = ceil(y1)
             elif y0 == -1:
                 y1 = floor(y1)
-            tf = False
+            if self.pos[0] == x1 and self.pos[1] == y1:
+                tf = False
         return x1, y1, tf
 
     def change_coords(self):
@@ -113,7 +114,7 @@ class Entity:  # сущность - игрок и призраки
         if a[2]:
             self.pos = (a[0], a[1])
             self.dir1 = self.dir2
-            return True
+            return
         a = self.can_move(self.dir1)
         self.pos = (a[0], a[1])
 
@@ -161,8 +162,8 @@ class Ghost(Entity):
         if y != 0:
             y = abs(y) / y
         self.dir1 = (x, y)
-        x1 = round(self.pos[0] + x * self.speed, 1)
-        y1 = round(self.pos[1] + y * self.speed, 1)
+        x1 = round(self.pos[0] + x * self.speed, 4)
+        y1 = round(self.pos[1] + y * self.speed, 4)
         self.pos = x1, y1
 
     def check_kush(self):
