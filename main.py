@@ -15,11 +15,6 @@ volume = 0.3  # громкость музыки
 
 difficulty = 2
 
-# скорость кушаца, призраков, модель поведения мандарина и клауди
-diffs = {0: (0.25, 0.0625, 0),
-         1: (0.5, 0.1, 1),
-         2: (0.5, 0.25, 1)}
-
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('images', name)
@@ -603,20 +598,31 @@ def results_window(rslt_txt, result_run, menu_run):
     return rslt_txt, result_run, menu_run
 
 
-def settings_window(set_run, menu_run):
+def settings_window(set_run, menu_run, difficulty):
+    for i in diffs:
+        diffs[i][3].current = diffs[i][3].base
+        if i == difficulty:
+            diffs[i][3].current = diffs[i][3].selected
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             terminate()
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            back_btn.check_pressed(mouse_pos)
+            for btn in (back_btn, easy, hard, unreal):
+                btn.check_pressed(mouse_pos)
         elif event.type == pygame.MOUSEBUTTONUP:
             if back_btn.check_mouse(mouse_pos):
                 set_run = False
                 menu_run = True
+            for i in diffs:
+                diffs[i][3].current = diffs[i][3].base
+                if diffs[i][3].check_mouse(mouse_pos):
+                    difficulty = i
+                    diffs[i][3].current = diffs[i][3].selected
     screen.blit(sbg.get_image(), (0, 0))
     screen.blit(set_bg, (0, 0))
-    screen.blit(back_btn.current, back_btn.coords)
-    return set_run, menu_run
+    for btn in (back_btn, easy, hard, unreal):
+        screen.blit(btn.current, btn.coords)
+    return set_run, menu_run, difficulty
 
 
 def game_window(game_run, start_time):
@@ -694,6 +700,15 @@ mainmenu = load_image('mainmenu.png')
 pygame.mixer.music.load('sounds/menu.mp3')
 pygame.mixer.music.play(-1, 5000, 1000)
 newgame = Button((256, 401), 'newgame')
+#
+easy = Button((255, 189), 'easy')
+hard = Button((255, 287), 'hard')
+unreal = Button((255, 385), 'unreal')
+# скорость кушаца, призраков, модель поведения мандарина и клауди, привязка к кнопкам
+diffs = {0: (0.25, 0.0625, 0, easy),
+         1: (0.5, 0.1, 1, hard),
+         2: (0.5, 0.25, 1, unreal)}
+#
 quitbtn1 = Button((256, 613), 'quit')
 results = Button((256, 507), 'results')
 menu = Button((0, 0), 'menu')
@@ -738,10 +753,11 @@ while running:
                 volume = 0
         pygame.mixer.music.set_volume(volume)
 
+    #diffs[difficulty][3].current = diffs[difficulty][3].selected
     while setrunning:
         mouse_pos = pygame.mouse.get_pos()
         back_btn.check_selected(mouse_pos)
-        setrunning, menurunning = settings_window(setrunning, menurunning)
+        setrunning, menurunning, difficulty = settings_window(setrunning, menurunning, difficulty)
         pygame.display.flip()
     res = get_results()
     positive = '-'
