@@ -513,8 +513,8 @@ def terminate():
     sys.exit()
 
 
-def main_menu(sldr_grabbed, menu_run, game_run, result_run):
-    for btn in [newgame, quitbtn1, results, *characters]:
+def main_menu(sldr_grabbed, menu_run, game_run, result_run, set_run):
+    for btn in [newgame, quitbtn1, results, setbtn, *characters]:
         btn.check_selected(mouse_pos)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -525,6 +525,7 @@ def main_menu(sldr_grabbed, menu_run, game_run, result_run):
             newgame.check_pressed(mouse_pos)
             quitbtn1.check_pressed(mouse_pos)
             results.check_pressed(mouse_pos)
+            setbtn.check_pressed(mouse_pos)
             if sound.slider_check(mouse_pos):
                 sldr_grabbed = True
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -536,12 +537,15 @@ def main_menu(sldr_grabbed, menu_run, game_run, result_run):
             elif results.check_mouse(mouse_pos):
                 menu_run = False
                 result_run = True
+            elif setbtn.check_mouse(mouse_pos):
+                menu_run = False
+                set_run = True
             for btn in characters:
                 btn.check_pressed(mouse_pos)
             buttons_moving()
             sldr_grabbed = False
     screen.blit(mainmenu, (0, 0))
-    for btn in [newgame, quitbtn1, results, *characters]:
+    for btn in [newgame, quitbtn1, results, setbtn, *characters]:
         screen.blit(btn.current, btn.coords)
     for btn in characters:
         if btn.selected in (2, 3):
@@ -551,7 +555,7 @@ def main_menu(sldr_grabbed, menu_run, game_run, result_run):
         screen.blit(sound.slider0, (27, 547))
         screen.blit(sound.slider1, sound.slider_coords())
     pygame.display.flip()
-    return sldr_grabbed, menu_run, game_run, result_run
+    return sldr_grabbed, menu_run, game_run, result_run, set_run
 
 
 def results_text_render():
@@ -676,6 +680,7 @@ results = Button((256, 507), 'results')
 menu = Button((0, 0), 'menu')
 results1 = Button((0, 50), 'results1')
 quitbtn2 = Button((0, 90), 'quit1')
+setbtn = Button((66, 747), 'set')
 sound = SoundWidget()
 font32 = load_font('18534.TTF', 32)
 font38 = load_font('18534.TTF', 38)
@@ -691,6 +696,7 @@ running = True
 menurunning = True
 gamerunning = False
 resultsrunning = False
+setrunning = False
 
 # база данных о результатах
 con = sqlite3.connect('results.db')
@@ -699,8 +705,8 @@ cur = con.cursor()
 while running:
     while menurunning:
         mouse_pos = pygame.mouse.get_pos()
-        slider_grabbed, menurunning, gamerunning, resultsrunning = main_menu(
-            slider_grabbed, menurunning, gamerunning, resultsrunning)
+        slider_grabbed, menurunning, gamerunning, resultsrunning, setrunning = main_menu(
+            slider_grabbed, menurunning, gamerunning, resultsrunning, setrunning)
         if slider_grabbed:
             volume = 1 - (mouse_pos[1] - 547) / 171
             if volume > 1:
@@ -709,6 +715,10 @@ while running:
                 volume = 0
         pygame.mixer.music.set_volume(volume)
 
+    while setrunning:
+        print('settings runned')
+        menurunning = True
+        setrunning = False
     res = get_results()
     positive = '-'
     negative = '-'
