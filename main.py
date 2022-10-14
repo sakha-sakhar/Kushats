@@ -584,7 +584,8 @@ def results_window(rslt_txt, result_run, menu_run):
                 cur.execute("""DELETE FROM results""")
                 con.commit()
                 rslt_txt = []
-    screen.blit(res_bg.get_image(), (0, 0))
+    screen.blit(sbg.get_image(), (0, 0))
+    screen.blit(res_bg, (0, 0))
     for i in range(len(rslt_txt)):
         x_coord = i // ceil(len(rslt_txt) / 2) * 390
         y_coord = 345 + i % ceil(len(rslt_txt) / 2) * 27
@@ -612,7 +613,8 @@ def settings_window(set_run, menu_run):
             if back_btn.check_mouse(mouse_pos):
                 set_run = False
                 menu_run = True
-    screen.blit(set_bg.get_image(), (0, 0))
+    screen.blit(sbg.get_image(), (0, 0))
+    screen.blit(set_bg, (0, 0))
     screen.blit(back_btn.current, back_btn.coords)
     return set_run, menu_run
 
@@ -684,10 +686,10 @@ clock = pygame.time.Clock()
 # оформление
 pygame.display.set_icon(load_image('icon.png'))
 bg = Animated(['background0.png', 'background2.png', 'background1.png', 'background2.png'], 250)
-res_bg = Animated(['res_background0.png', 'res_background2.png',
-                   'res_background1.png', 'res_background2.png'], 250)
-set_bg = Animated(['sbg0.png', 'sbg2.png',
-                   'sbg1.png', 'sbg2.png'], 250)
+res_bg = load_image('resultsbg.png')
+set_bg = load_image('settingsbg.png')
+sbg = Animated(['sbg0.png', 'sbg2.png',
+                'sbg1.png', 'sbg2.png'], 250)
 mainmenu = load_image('mainmenu.png')
 pygame.mixer.music.load('sounds/menu.mp3')
 pygame.mixer.music.play(-1, 5000, 1000)
@@ -719,8 +721,8 @@ gamerunning = False
 resultsrunning = False
 setrunning = False
 
-# база данных о результатах
-con = sqlite3.connect('results.db')
+# база данных о результатах и настройках
+con = sqlite3.connect('data.db')
 cur = con.cursor()
 
 while running:
