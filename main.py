@@ -173,16 +173,15 @@ class Ghost(Entity):
             if not self.change_coords():
                 d1 = (self.dir2[1], self.dir2[0])
                 d2 = (-self.dir2[1], -self.dir2[0])
-                if self.can_move(d1):
-                    if self.can_move(d2):
+                if self.can_move(d1)[2]:
+                    if self.can_move(d2)[2]:
                         d = choice((d1, d2))
                     else:
                         d = d1
-                elif self.can_move(d2):
+                elif self.can_move(d2)[2]:
                     d = d2
                 else:
-                    d = (-self.dir2[0], self.dir2[1])
-                    print(self.dir2, d1, d2, d)
+                    d = (-self.dir2[0], -self.dir2[1])
                 self.dir2 = d
 
     def check_kush(self):
