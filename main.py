@@ -602,6 +602,21 @@ def results_window(rslt_txt, result_run, menu_run):
     return rslt_txt, result_run, menu_run
 
 
+def settings_window(set_run, menu_run):
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            terminate()
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            back_btn.check_pressed(mouse_pos)
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if back_btn.check_mouse(mouse_pos):
+                set_run = False
+                menu_run = True
+    screen.blit(set_bg.get_image(), (0, 0))
+    screen.blit(back_btn.current, back_btn.coords)
+    return set_run, menu_run
+
+
 def game_window(game_run, start_time):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -671,6 +686,8 @@ pygame.display.set_icon(load_image('icon.png'))
 bg = Animated(['background0.png', 'background2.png', 'background1.png', 'background2.png'], 250)
 res_bg = Animated(['res_background0.png', 'res_background2.png',
                    'res_background1.png', 'res_background2.png'], 250)
+set_bg = Animated(['sbg0.png', 'sbg2.png',
+                   'sbg1.png', 'sbg2.png'], 250)
 mainmenu = load_image('mainmenu.png')
 pygame.mixer.music.load('sounds/menu.mp3')
 pygame.mixer.music.play(-1, 5000, 1000)
@@ -686,6 +703,10 @@ font32 = load_font('18534.TTF', 32)
 font38 = load_font('18534.TTF', 38)
 font48 = load_font('18534.TTF', 48)
 font64 = load_font('18534.TTF', 64)
+score_txt = font38.render('Score', True, (255, 217, 82))
+total_txt = font38.render('Total', True, (255, 217, 82))
+back_btn = Button((63, 63), 'back')
+del_btn = Button((624, 63), 'del')
 characters = []
 for j, character in enumerate(['kush', 'chaser', 'mandarin', 'cloudy']):
     characters.append(CharacterBtn((570, 415 + 70 * j), character))
@@ -716,9 +737,10 @@ while running:
         pygame.mixer.music.set_volume(volume)
 
     while setrunning:
-        print('settings runned')
-        menurunning = True
-        setrunning = False
+        mouse_pos = pygame.mouse.get_pos()
+        back_btn.check_selected(mouse_pos)
+        setrunning, menurunning = settings_window(setrunning, menurunning)
+        pygame.display.flip()
     res = get_results()
     positive = '-'
     negative = '-'
@@ -732,10 +754,6 @@ while running:
     all_results_text = results_text_render()
     positive_text = font48.render(str(positive), True, (255, 217, 82))
     negative_text = font48.render(str(negative), True, (255, 217, 82))
-    score_txt = font38.render('Score', True, (255, 217, 82))
-    total_txt = font38.render('Total', True, (255, 217, 82))
-    back_btn = Button((63, 63), 'back')
-    del_btn = Button((624, 63), 'del')
     while resultsrunning:
         mouse_pos = pygame.mouse.get_pos()
         back_btn.check_selected(mouse_pos)
