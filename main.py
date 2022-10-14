@@ -440,14 +440,25 @@ class CharacterBtn(Button):
             self.selected = 2
 
 
+# пожалуй, слудет переписать более универсально, но вроде работает
 class SoundWidget(Button):
-    def __init__(self):
-        self.coords = (0, 530)
-        self.size = (70, 270)
+    def __init__(self, coords0, coords1, ori, length):  # ori - ориентация, 0 - снизу вверх, 1 - слева направо
+        # coords0 - коорды иконки, coords1 - коорды слайдера при volume=1
+        if ori == 0:
+            self.coords = (coords1[0] - 15, coords1[1] - 15)
+            self.size = (61, coords1[1] + length + 15)
+        else:
+            self.coords = (coords1[0] - length + 16, coords1[1] - 15)
+            self.size = (length + 30, 61)
+        self.coords0 = coords0
+        self.coords1 = coords1
+        self.length = length
+        self.ori = ori
         self.mainpics = [load_image(image) for image in ['sound0.png', 'sound1.png',
                                                          'sound2.png', 'sound3.png', 'soundoff.png']]
         self.slider0 = load_image('slider.png')
         self.slider1 = load_image('slider1.png')
+        self.slider2 = load_image('slider2.png')
 
     def get_main_image(self):
         if volume == 0:
@@ -455,7 +466,10 @@ class SoundWidget(Button):
         return self.mainpics[int(volume // 0.26)]
 
     def slider_coords(self):
-        return 16, int(547 + (1 - volume) * 171)
+        if self.ori == 0:
+            return self.coords1[0], self.coords1[1] + (self.length - 16) * (1 - volume)
+        else:
+            return self.coords1[0] - (self.length - 16) * (1 - volume), self.coords1[1]
 
     def slider_check(self, mouse_coord):
         coords = self.slider_coords()
@@ -545,9 +559,9 @@ def main_menu(sldr_grabbed, menu_run, game_run, result_run, set_run):
     for btn in characters:
         if btn.selected in (2, 3):
             screen.blit(btn.info, (0, 0))
-    screen.blit(sound.get_main_image(), (0, 700))
+    screen.blit(sound.get_main_image(), sound.coords0)
     if sound.check_mouse(mouse_pos) or slider_grabbed:
-        screen.blit(sound.slider0, (27, 547))
+        screen.blit(sound.slider0, (sound.coords1[0] + 11, sound.coords1[1]))
         screen.blit(sound.slider1, sound.slider_coords())
     pygame.display.flip()
     return sldr_grabbed, menu_run, game_run, result_run, set_run
@@ -598,7 +612,7 @@ def results_window(rslt_txt, result_run, menu_run):
     return rslt_txt, result_run, menu_run
 
 
-def settings_window(set_run, menu_run, difficulty):
+def settings_window(set_run, menu_run, difficulty, slr_grab):
     for i in diffs:
         diffs[i][3].current = diffs[i][3].base
         if i == difficulty:
@@ -609,6 +623,8 @@ def settings_window(set_run, menu_run, difficulty):
         elif event.type == pygame.MOUSEBUTTONDOWN:
             for btn in (back_btn, easy, hard, unreal):
                 btn.check_pressed(mouse_pos)
+            if sound1.slider_check(mouse_pos):
+                slr_grab = True
         elif event.type == pygame.MOUSEBUTTONUP:
             if back_btn.check_mouse(mouse_pos):
                 set_run = False
@@ -618,11 +634,14 @@ def settings_window(set_run, menu_run, difficulty):
                 if diffs[i][3].check_mouse(mouse_pos):
                     difficulty = i
                     diffs[i][3].current = diffs[i][3].selected
+            slr_grab = False
     screen.blit(sbg.get_image(), (0, 0))
     screen.blit(set_bg, (0, 0))
+    screen.blit(sound1.get_main_image(), sound1.coords0)
+    screen.blit(sound1.slider2, sound1.slider_coords())
     for btn in (back_btn, easy, hard, unreal):
         screen.blit(btn.current, btn.coords)
-    return set_run, menu_run, difficulty
+    return set_run, menu_run, difficulty, slr_grab
 
 
 def game_window(game_run, start_time):
@@ -715,7 +734,10 @@ menu = Button((0, 0), 'menu')
 results1 = Button((0, 50), 'results1')
 quitbtn2 = Button((0, 90), 'quit1')
 setbtn = Button((66, 747), 'set')
-sound = SoundWidget()
+#
+sound = SoundWidget((17, 747), (16, 547), 0, 187)
+sound1 = SoundWidget((150, 558), (593, 559), 1, 418)
+#
 font32 = load_font('18534.TTF', 32)
 font38 = load_font('18534.TTF', 38)
 font48 = load_font('18534.TTF', 48)
@@ -746,18 +768,25 @@ while running:
         slider_grabbed, menurunning, gamerunning, resultsrunning, setrunning = main_menu(
             slider_grabbed, menurunning, gamerunning, resultsrunning, setrunning)
         if slider_grabbed:
-            volume = 1 - (mouse_pos[1] - 547) / 171
+            volume = 1 - (mouse_pos[1] - sound.coords1[1]) / sound.length
             if volume > 1:
                 volume = 1
             elif volume < 0:
                 volume = 0
         pygame.mixer.music.set_volume(volume)
 
-    #diffs[difficulty][3].current = diffs[difficulty][3].selected
     while setrunning:
         mouse_pos = pygame.mouse.get_pos()
         back_btn.check_selected(mouse_pos)
-        setrunning, menurunning, difficulty = settings_window(setrunning, menurunning, difficulty)
+        setrunning, menurunning, difficulty, slider_grabbed = \
+            settings_window(setrunning, menurunning, difficulty, slider_grabbed)
+        if slider_grabbed:
+            volume = (mouse_pos[0] - sound1.coords1[0] + sound1.length - 16) / sound1.length
+            if volume > 1:
+                volume = 1
+            elif volume < 0:
+                volume = 0
+        pygame.mixer.music.set_volume(volume)
         pygame.display.flip()
     res = get_results()
     positive = '-'
