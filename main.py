@@ -9,7 +9,7 @@ directions = {0: ((1, 0), 'right'),  # вправо
               1: ((-1, 0), 'left'),  # влево
               2: ((0, 1), 'down'),  # вниз
               3: ((0, -1), 'up'),  # вверх
-              -1: ((0, 0), 'stop')}   # стоп
+              5: ((0, 0), 'stop')}   # стоп
 
 # база данных о результатах и настройках
 con = sqlite3.connect('data.db')
@@ -65,10 +65,10 @@ class Animated:
 
 
 class Entity:  # сущность - игрок и призраки
-    def __init__(self, pos, brd, name, speed=0.5):
+    def __init__(self, pos, brd, sprite_column, speed=0.5):
         self.board = brd
         self.pos = pos
-        self.name = name
+        self.sprites = load_image('sprites.png').subsurface(sprite_column * 51 * 2, 0, 51 * 2, 51 * 6)
         self.speed = speed  # от 0.1 до 1
         self.dir1 = (1, 0)  # освновное направление
         self.dir2 = (1, 0)  # если игрок изменил направление, когда в том направлении была стена, записывается сюда
@@ -119,22 +119,23 @@ class Entity:  # сущность - игрок и призраки
         self.pos = (a[0], a[1])
         return a[2]
 
+
     def get_image(self):
+        t = pygame.time.get_ticks() // 200 % 2
         # для картинок из таймаута
         if not self.check_state():
-            im = self.name + 'angry' + str(pygame.time.get_ticks() // 200 % 2) + '.png'
-            return load_image(im)
+            cropped_region = (t * 51, 4 * 51, 51, 51)
+            return self.sprites.subsurface(cropped_region)
         # находит название направления
-        direction = ''
+        direction = 0
         for dr in directions:
             if directions[dr][0] == self.dir1:
-                direction = directions[dr][1]
+                direction = dr
                 break
-        if direction:
-            im = self.name + direction + str(pygame.time.get_ticks() // 200 % 2) + '.png'
         else:
-            im = 'ERROR.png'
-        return load_image(im)
+            return load_image('ERROR.png')
+        cropped_region = (t * 51, direction * 51, 51, 51)
+        return self.sprites.subsurface(cropped_region)
 
     def check_kush(self):
         return
@@ -144,8 +145,8 @@ class Entity:  # сущность - игрок и призраки
 
 
 class Ghost(Entity):
-    def __init__(self, pos, brd, trajectory, name='', speed=0.1):
-        super().__init__(pos, brd, name)
+    def __init__(self, pos, brd, trajectory, column, speed=0.1):
+        super().__init__(pos, brd, column)
         self.trajectory = trajectory
         self.point = 0  # к которой точке траектории направляется
         self.speed = speed
@@ -205,7 +206,7 @@ class Ghost(Entity):
 
 class Chaser(Ghost):
     def __init__(self, pos, brd, speed=0.1):
-        super().__init__(pos, brd, None, 'chaser', speed)
+        super().__init__(pos, brd, None, 1, speed)
 
     def change_dir(self, dir_x, dir_y):
         if self.can_move(dir_x)[2] and dir_x != (0, 0):
@@ -262,7 +263,7 @@ class Board:
         self.cell_size = 50
         self.portal = -1, -1    # портала нет, пока не собраны все точки
         self.portal_im = load_image('portal.png')
-        self.kush = Entity([1, 12], self, 'kush', speed=difsets[0])  # игрок
+        self.kush = Entity([1, 12], self, 0, speed=difsets[0])  # игрок
         self.sweets = []
         for name in ['donut', 'cherry', 'candycane']:
             sweet = Sweet(self, name)
@@ -276,16 +277,16 @@ class Board:
                                           (13, 12), (12, 12), (12, 13), (10, 13),
                                           (10, 12), (9, 12), (9, 10), (6, 10),
                                           (6, 11), (4, 11), (4, 9), (3, 9),
-                                          (3, 2), (1, 2), (1, 0)], name='cloudy', speed=difsets[1])
+                                          (3, 2), (1, 2), (1, 0)], 3, speed=difsets[1])
             mandarin = Ghost((10, 2), self, [(10, 0), (12, 0), (12, 1), (13, 1),
                                              (13, 3), (6, 3), (9, 3), (9, 0),
                                              (7, 0), (7, 1), (5, 1), (5, 2),
                                              (0, 2), (0, 1), (1, 1), (1, 0), (3, 0),
                                              (3, 3), (4, 3), (4, 2), (5, 2),
-                                             (5, 0), (9, 0), (9, 2), (10, 2)], name='mandarin', speed=difsets[1])
+                                             (5, 0), (9, 0), (9, 2), (10, 2)], 2, speed=difsets[1])
         else:
-            cloudy = Ghost((1, 0), self, None, name='cloudy', speed=difsets[1])
-            mandarin = Ghost((10, 2), self, None, name='mandarin', speed=difsets[1])
+            cloudy = Ghost((1, 0), self, None, 3, speed=difsets[1])
+            mandarin = Ghost((10, 2), self, None, 2, speed=difsets[1])
         self.ghosts = [chaser, cloudy, mandarin]
         self.score = 0
         self.ghost_sound = pygame.mixer.Sound('sounds/ghost attack.mp3')
@@ -366,12 +367,18 @@ class Board:
 
 
 class Button:
-    def __init__(self, coords, name):
+    def __init__(self, coords, name, line=-1):
         self.coords = coords
         self.name = name
-        self.base = load_image(name + 'base.png')
-        self.selected = load_image(name + 'selected.png')
-        self.pressed = load_image(name + 'pressed.png')
+        if line == -1:
+            self.base = load_image(name + 'base.png')
+            self.selected = load_image(name + 'selected.png')
+            self.pressed = load_image(name + 'pressed.png')
+        else:
+            self.states = load_image('bigbuttons.png').subsurface(0, 83 * line, 870, 83)
+            self.base = self.states.subsurface(0, 0, 290, 83)
+            self.selected = self.states.subsurface(290, 0, 290, 83)
+            self.pressed = self.states.subsurface(580, 0, 290, 83)
         self.current = self.base
         self.size = self.base.get_size()
 
@@ -398,14 +405,14 @@ class Button:
 
 
 class CharacterBtn(Button):
-    def __init__(self, coords, name):
+    def __init__(self, coords, name, col):
         self.coords = coords
-        self.name = name
-        self.base0 = load_image(name + 'right0.png')
-        self.base1 = load_image(name + 'right1.png')
-        self.angry0 = load_image(name + 'angry0.png')
-        self.angry1 = load_image(name + 'angry1.png')
-        self.info = load_image(name + 'info.png')
+        self.sprites = load_image('sprites.png').subsurface(col * 51 * 2, 0, 51 * 2, 51 * 6)
+        self.base0 = self.sprites.subsurface(0, 0, 51, 51)
+        self.base1 = self.sprites.subsurface(51, 0, 51, 51)
+        self.angry0 = self.sprites.subsurface(0, 51 * 4, 51, 51)
+        self.angry1 = self.sprites.subsurface(51, 51 * 4, 51, 51)
+        self.info = load_image('info.png').subsurface(col * 306, 0, 306, 294)
         self.size = self.base0.get_size()
         self.selected = 0  # 0 - не выбран, 1 - наведён курсор, 2 - выбран, 3 - нажат
 
@@ -562,7 +569,7 @@ def main_menu(sldr_grabbed, menu_run, game_run, result_run, set_run):
         screen.blit(btn.current, btn.coords)
     for btn in characters:
         if btn.selected in (2, 3):
-            screen.blit(btn.info, (0, 0))
+            screen.blit(btn.info, (434, 402))
     screen.blit(sound.get_main_image(), sound.coords0)
     if sound.check_mouse(mouse_pos) or slider_grabbed:
         screen.blit(sound.slider0, (sound.coords1[0] + 11, sound.coords1[1]))
@@ -744,18 +751,18 @@ mainmenu = load_image('mainmenu.png')
 pause_screen = load_image('pausedscreen.png')
 pygame.mixer.music.load('sounds/menu.mp3')
 pygame.mixer.music.play(-1, 5000, 1000)
-newgame = Button((256, 401), 'newgame')
+newgame = Button((256, 401), 'newgame', line=0)
 #
-easy = Button((255, 189), 'easy')
-hard = Button((255, 287), 'hard')
-unreal = Button((255, 385), 'unreal')
+easy = Button((255, 189), 'easy', line=3)
+hard = Button((255, 287), 'hard', line=4)
+unreal = Button((255, 385), 'unreal', line=5)
 # скорость кушаца, призраков, модель поведения мандарина и клауди, привязка к кнопкам
 diffs = {0: (0.25, 0.0625, 0, easy),
          1: (0.5, 0.1, 1, hard),
          2: (0.5, 0.25, 1, unreal)}
 #
-quitbtn1 = Button((256, 613), 'quit')
-results = Button((256, 507), 'results')
+quitbtn1 = Button((256, 613), 'quit', line=1)
+results = Button((256, 507), 'results', line=2)
 menu = Button((0, 0), 'menu')
 results1 = Button((0, 50), 'results1')
 quitbtn2 = Button((0, 90), 'quit1')
@@ -775,7 +782,7 @@ del_btn = Button((624, 63), 'del')
 pause_btn = Button((200, 10), 'pause')
 characters = []
 for j, character in enumerate(['kush', 'chaser', 'mandarin', 'cloudy']):
-    characters.append(CharacterBtn((570, 415 + 70 * j), character))
+    characters.append(CharacterBtn((570, 415 + 70 * j), character, j))
 
 # для правильной работы программы
 slider_grabbed = False
