@@ -650,6 +650,7 @@ def settings_window(set_run, menu_run, difficulty, slr_grab):
 
 def game_window(game_run, start_time, paused):
     pause_btn.check_selected(mouse_pos)
+    quitbtn2.check_selected(mouse_pos)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             terminate()
@@ -658,25 +659,18 @@ def game_window(game_run, start_time, paused):
         elif event.type == pygame.MOUSEBUTTONUP:
             if pause_btn.check_mouse(mouse_pos):
                 paused = not paused
-                if paused:
-                    print('пауза')
-                else:
-                    print('не пауза')
+            if quitbtn2.check_mouse(mouse_pos) and paused:
+                terminate()
         if event.type == pygame.KEYUP:  # стрелки
             if 1073741903 <= event.key <= 1073741906:
                 if not paused:
                     board.kush.change_dir(event.key - 1073741903)
             elif event.key == 32:  # пауза
                 paused = not paused
-                if paused:
-                    print('пауза')
-                else:
-                    print('не пауза')
             else:
                 print(event.key)
     clock.tick(37)
     screen.blit(bg.get_image(), (0, 0))
-    screen.blit(pause_btn.current, pause_btn.coords)
     if not paused:
         timer = (pygame.time.get_ticks() - start_time) // 60000
         if timer == 1:
@@ -687,6 +681,10 @@ def game_window(game_run, start_time, paused):
             ghost.move()
         board.check_collision()
     board.render(screen)
+    if paused:
+        screen.blit(pause_screen, (0, 0))
+        screen.blit(quitbtn2.current, quitbtn2.coords)
+    screen.blit(pause_btn.current, pause_btn.coords)
     pygame.display.flip()
     return game_run, start_time, paused
 
@@ -743,6 +741,7 @@ set_bg = load_image('settingsbg.png')
 sbg = Animated(['sbg0.png', 'sbg2.png',
                 'sbg1.png', 'sbg2.png'], 250)
 mainmenu = load_image('mainmenu.png')
+pause_screen = load_image('pausedscreen.png')
 pygame.mixer.music.load('sounds/menu.mp3')
 pygame.mixer.music.play(-1, 5000, 1000)
 newgame = Button((256, 401), 'newgame')
@@ -848,12 +847,11 @@ while running:
         pygame.mixer.music.play(fade_ms=100)
         board = Board(diffs[difficulty])
         starttime = pygame.time.get_ticks()
-        #
-        #
-        #
+        quitbtn2.change_coords(0, 6)
         while not board.gameend:
             mouse_pos = pygame.mouse.get_pos()
             gamerunning, starttime, paused = game_window(gamerunning, starttime, paused)
+        quitbtn2.change_coords(0, 90)
         pygame.time.wait(1850)
         pygame.mixer.music.load('sounds/menu.mp3')
         pygame.mixer.music.play(-1, 5000, 1000)
