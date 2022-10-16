@@ -615,7 +615,7 @@ def results_window(rslt_txt, result_run, menu_run):
 def settings_window(set_run, menu_run, difficulty, slr_grab):
     for i in diffs:
         diffs[i][3].current = diffs[i][3].base
-        if i == difficulty:
+        if i == difficulty or diffs[i][3].check_mouse(mouse_pos):
             diffs[i][3].current = diffs[i][3].selected
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
