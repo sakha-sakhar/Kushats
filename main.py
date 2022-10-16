@@ -11,9 +11,12 @@ directions = {0: ((1, 0), 'right'),  # вправо
               3: ((0, -1), 'up'),  # вверх
               -1: ((0, 0), 'stop')}   # стоп
 
-volume = 0.3  # громкость музыки
+# база данных о результатах и настройках
+con = sqlite3.connect('data.db')
+cur = con.cursor()
 
-difficulty = 2
+volume = cur.execute("""SELECT volume FROM settings""").fetchall()[0][0]  # громкость музыки
+difficulty = cur.execute("""SELECT difficulty FROM settings""").fetchall()[0][0]
 
 
 def load_image(name, colorkey=None):
@@ -517,6 +520,7 @@ def buttons_moving():
 
 
 def terminate():
+    save_settings()
     con.close()
     pygame.quit()
     sys.exit()
@@ -700,6 +704,10 @@ def game_over_window(game_over_run, game_run, menu_run, results_run):
     pygame.display.flip()
     return game_over_run, game_run, menu_run, results_run
 
+def save_settings():
+    cur.execute("""UPDATE settings SET volume = ?, difficulty = ?""", (volume, difficulty,))
+    con.commit()
+
 
 # основа
 pygame.init()
@@ -758,10 +766,6 @@ gamerunning = False
 resultsrunning = False
 setrunning = False
 
-# база данных о результатах и настройках
-con = sqlite3.connect('data.db')
-cur = con.cursor()
-
 while running:
     while menurunning:
         mouse_pos = pygame.mouse.get_pos()
@@ -788,6 +792,9 @@ while running:
                 volume = 0
         pygame.mixer.music.set_volume(volume)
         pygame.display.flip()
+
+    save_settings()
+
     res = get_results()
     positive = '-'
     negative = '-'
